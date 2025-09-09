@@ -12,6 +12,7 @@
 #include "utils/Types.hpp"
 
 #include <memory>
+#include <optional>
 
     /*
     
@@ -67,13 +68,12 @@
 
 struct Entity {
 public:
-    Engine2D::Coords_t pos_ {};
+    Engine2D::Coords_t pos_ {}; 
     float dimensions_ {0.f};
     Engine2D::EDirection direction_ {Engine2D::EDirection::NONE};
-    
-    std::optional<Engine2D::EDirection> buffered_direction_;
+
     std::optional<Engine2D::Coords_t> next_step_;
-    std::optional<Engine2D::Coords_t> target_pos_center_;
+    std::optional<Engine2D::Coords_t> target_pos_;
 
     Entity(Engine2D::Coords_t pos, float dim) 
         : pos_(pos), dimensions_(dim) {}
@@ -100,17 +100,13 @@ struct Ghost : public Entity {
         auto direction_vector = Engine2D::FromDirectionToVector(direction_);
         // Set next step if there's none
         if (!next_step_) {
-            if (buffered_direction_) {
-                // Update direction
-                direction_ = *buffered_direction_;
-                direction_vector = Engine2D::FromDirectionToVector(direction_);
-                
-                // Set next step
-                next_step_ = pos_ + Vec2{dimensions_ * direction_vector.x, dimensions_ * direction_vector.y};
+            if (!target_pos_ || pos_ == *target_pos_) return;
 
-                // Reset buffer
-                buffered_direction_.reset();
-            }
+            direction_ = Engine2D::ResultDirection(pos_, *target_pos_);
+            direction_vector = Engine2D::FromDirectionToVector(direction_);
+                
+            // Set next step
+            next_step_ = pos_ + Engine2D::Coords_t{dimensions_ * direction_vector.x, dimensions_ * direction_vector.y};
         }
 
         // Move
@@ -134,7 +130,8 @@ struct Ghost : public Entity {
 class Game : public Engine2D::IGame {
 public:    
     void Start() {
-        ghost_ = std::make_unique<Ghost>(grid_.ColRowToCoords({2, 5}), 20.f);
+        ghost_ = std::make_unique<Ghost>(
+            grid_.TopLeftCoordsToCenterCoords(grid_.ColRowToCoords({2, 5})), 20.f);
     }
 
     void Update(float dt) {
@@ -145,7 +142,7 @@ public:
         // Render Grid
         const auto& cells = grid_.Cells();
         const auto cell_dimensions = static_cast<float>(grid_.GetCellDimensions());
-        renderer.SetRenderingColor({150, 150, 0, 255});
+        renderer.SetRenderingColor({195, 195, 195, 255});
         for (const auto& c : cells) {
             renderer.RenderRect(
                 {c.top_left_.x, c.top_left_.y, cell_dimensions, cell_dimensions}
@@ -157,12 +154,24 @@ public:
         // Render Ghosts
         renderer.SetRenderingColor({200, 0, 0, 255});
         renderer.RenderRectFilled(
-            {ghost_->pos_.x, ghost_->pos_.x, ghost_->dimensions_, ghost_->dimensions_}
+            {ghost_->pos_.x, ghost_->pos_.y, ghost_->dimensions_, ghost_->dimensions_}
         );
+
+        if (ghost_->target_pos_) {
+            renderer.SetRenderingColor({50, 255, 0, 255});
+            renderer.RenderRectFilled(
+                {ghost_->target_pos_->x, ghost_->target_pos_->y, ghost_->dimensions_, ghost_->dimensions_}
+        );
+        }
     }
 
-    void HandleEvents() {
-
+    void HandleEvent(const SDL_Event& event) {
+        if (event.type == SDL_MOUSEBUTTONUP) {
+            const auto colrow = grid_.CoordsToColRow(
+                {static_cast<float>(event.button.x), static_cast<float>(event.button.y)});
+            const auto coords = grid_.TopLeftCoordsToCenterCoords(grid_.ColRowToCoords(colrow));
+            ghost_->target_pos_ = coords;
+        }
     }
 
     virtual std::string GetWindowTitle() { return "Hello Alejandro"; }

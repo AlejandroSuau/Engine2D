@@ -1,4 +1,4 @@
-#include "Grid/GridMovement.hpp"
+#include "grid/GridMovement.hpp"
 
 namespace Engine2D {
 

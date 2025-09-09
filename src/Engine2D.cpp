@@ -83,7 +83,7 @@ void Engine::CoreLoop() {
 }
 
 void Engine::Update(float dt) {
-
+    game_->Update(dt);
 }
 
 void Engine::Render() {
@@ -92,10 +92,7 @@ void Engine::Render() {
     SDL_RenderClear(renderer);
 
     // Render
-
-    if (game_) {
-        game_->Render(*renderer_);
-    }
+    game_->Render(*renderer_);
     
     // End Render
 
@@ -110,11 +107,7 @@ void Engine::HandleEvents() {
             return;
         }
 
-        if (event.type == SDL_MOUSEBUTTONUP) {
-        }
-
-        if (event.type == SDL_KEYUP) {
-        }
+        game_->HandleEvent(event);
     }
 }
 
