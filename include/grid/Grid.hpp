@@ -1,15 +1,13 @@
 #pragma once
 
 #include "math/Vec2.hpp"
+#include "utils/Types.hpp"
 
 #include <vector>
 #include <array>
 #include <optional>
 
 namespace Engine2D {
-
-using ColRow_t = Vec2<int>;
-using Coords_t = Vec2<float>;
 
 class Grid {
 public:

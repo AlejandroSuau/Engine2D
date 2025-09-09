@@ -1,13 +1,13 @@
 #pragma once
 
-#pragma once
-
 #include <SDL2/SDL.h>
 
 #include "sdl_initializer/SDLInitializer.hpp"
 #include "sdl_initializer/SDLImageInitializer.hpp"
 #include "sdl_initializer/SDLTTFInitializer.hpp"
 #include "sdl_initializer/SDLMixerInitializer.hpp"
+
+#include "renderer/Renderer.hpp"
 
 #include "game/IGame.hpp"
 
@@ -33,6 +33,8 @@ private:
     std::unique_ptr<SDL_Window, void(*)(SDL_Window*)> window_;
     std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)> sdl_renderer_;
     bool is_running_;
+
+    std::unique_ptr<Renderer> renderer_;
 
     // Game
     std::unique_ptr<IGame> game_;

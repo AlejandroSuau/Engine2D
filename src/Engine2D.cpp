@@ -14,8 +14,8 @@ static constexpr Uint64 kFrameDelay = 1000 / kTargetFPS; // Frame delay in milli
 Engine::Engine()
     : sdl_(std::make_unique<SDLInitializer::Main>())
     , sdl_image_(std::make_unique<SDLInitializer::Image>())
-    , sdl_ttf_(std::make_unique<SDLInitializer::TTF>())
     , sdl_mixer_(std::make_unique<SDLInitializer::Mixer>())
+    , sdl_ttf_(std::make_unique<SDLInitializer::TTF>())
     , window_(
         SDL_CreateWindow(
             "Engine",
@@ -34,6 +34,8 @@ Engine::Engine()
             std::string("Error creating the game") + SDL_GetError());
     }
     
+    renderer_ = std::make_unique<Renderer>(*sdl_renderer_);
+
     SDL_SetRenderDrawBlendMode(sdl_renderer_.get(), SDL_BLENDMODE_BLEND);
 }
     
@@ -92,7 +94,7 @@ void Engine::Render() {
     // Render
 
     if (game_) {
-        game_->Render(renderer);
+        game_->Render(*renderer_);
     }
     
     // End Render

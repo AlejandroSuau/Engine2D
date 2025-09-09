@@ -1,10 +1,10 @@
 #pragma once
 
-#include <SDL2/SDL.h>
-
 #include <string>
 
 namespace Engine2D {
+    
+class Renderer;
 
 class IGame {
 public:
@@ -12,7 +12,7 @@ public:
     
     virtual void Start() = 0;
     virtual void Update(float dt) = 0;
-    virtual void Render(SDL_Renderer* renderer) = 0;
+    virtual void Render(Renderer& renderer) = 0;
     virtual void HandleEvents() = 0;
 
     virtual std::string GetWindowTitle() = 0;

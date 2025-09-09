@@ -1,5 +1,7 @@
 #include "grid/Grid.hpp"
 
+#include <assert.h>
+
 namespace Engine2D {
 
 Grid::Grid(
@@ -47,11 +49,13 @@ std::size_t Grid::ColRowToIndex(ColRow_t colrow) const {
 }
 
 Coords_t Grid::ColRowToCoords(ColRow_t colrow) const {
-    return {0.f, 0.f};
+    const auto index = ColRowToIndex(colrow);
+    return cells_[index].top_left_;
 }
 
 Coords_t Grid::TopLeftCoordsToCenterCoords(Coords_t coords) const {
-    return {0.f, 0.f};
+    const auto half_cell = static_cast<float>(cell_dimensions_) / 2.f;
+    return coords + Coords_t{half_cell, half_cell};
 }
 
 ColRow_t Grid::IndexToColRow(std::size_t index) const {
@@ -65,19 +69,28 @@ ColRow_t Grid::CoordsToColRow(Coords_t coords) const {
 }
 
 bool Grid::IsWalkable(std::size_t cell_index) const {
-    return false;
+    assert(cell_index < cell_count_ && "Cell index above cells size");
+    return (cells_[cell_index].is_walkable_);
 }
 
 bool Grid::AreCoordsWalkable(Coords_t coords) const {
-    return false;
+    if (!AreCoordsInsideBoundaries(coords)) return false;
+    
+    const auto colrow = CoordsToColRow(coords);
+    const auto index = ColRowToIndex(colrow);
+    return cells_[index].is_walkable_;
 }
 
 bool Grid::AreColRowWalkable(ColRow_t colrow) const {
-    return false;
+    if (!AreColRowInsideBoundaries(colrow)) return false;
+
+    const auto index = ColRowToIndex(colrow);
+    return cells_[index].is_walkable_;
 }
 
 bool Grid::AreColRowInsideBoundaries(ColRow_t colrow) const {
-    return false;
+    return (colrow.y >= 0 && colrow.y < row_count_ &&
+            colrow.x >= 0 && colrow.x < col_count_);
 }
 
 bool Grid::AreCoordsInsideBoundaries(Coords_t coords) const {
