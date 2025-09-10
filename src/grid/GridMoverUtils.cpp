@@ -2,6 +2,11 @@
 
 namespace Engine2D {
 
+bool IsAtTarget(const Coords_t p, const Coords_t goal) {
+    constexpr float eps = 1e-3f;
+    return (std::abs(p.x - goal.x) <= eps && std::abs(p.y - goal.y) <= eps);
+}
+
 EDirection OppositeDirection(EDirection direction) {
     switch (direction) {
         default:

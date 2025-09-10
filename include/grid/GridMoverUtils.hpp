@@ -12,6 +12,7 @@ enum class EDirection {
     DOWN
 };
 
+bool IsAtTarget(const Coords_t p, const Coords_t goal);
 EDirection OppositeDirection(EDirection direction);
 Coords_t FromDirectionToVector(EDirection direction);
 bool IsHorizontally(Vec2<float> direction);

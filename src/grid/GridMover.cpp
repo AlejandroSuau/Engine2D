@@ -2,6 +2,8 @@
 
 #include <SDL2/SDL.h>
 
+#include <math.h>
+
 namespace Engine2D {
 
 GridMover::GridMover(Params p) 
@@ -32,25 +34,15 @@ void GridMover::Update(float dt, const Grid& grid, Coords_t& pos) {
     const float max_step = speed * dt;
     
     float remaining = 0.f;
-    if (v.x != 0.f) remaining = (target_->x - pos.x) * v.x;
-    else if (v.y != 0.f) remaining = (target_->y - pos.y) * v.y;
+    if (IsHorizontally(v)) remaining = (target_->x - pos.x) * v.x;
+    else if (IsVertically(v)) remaining = (target_->y - pos.y) * v.y;
 
     const float step = std::min(max_step, std::max(0.f, remaining));
-    pos.x += v.x * step;
-    pos.y += v.y * step;
+    pos += Coords_t{v.x * step, v.y * step};
 
-    constexpr float kEps = 1e-4f;
-    if (std::abs((v.x ? (target_->x - pos.x) : (target_->y - pos.y))) <= kEps) {
-        if (v.x) pos.x = target_->x; else pos.y = target_->y;
+    if (IsAtTarget(pos, *target_)) {
+        pos = *target_;
         target_.reset();
-
-        if (queued_dir_ != EDirection::NONE && queued_dir_ != dir_) {
-            const auto nv = FromDirectionToVector(queued_dir_);
-            Coords_t next_cell = pos + Coords_t{params_.tile_size * nv.x, params_.tile_size * nv.y};
-            if (grid.AreCoordsWalkable(next_cell)) {
-                dir_ = queued_dir_;
-            }
-        }
     }
 }
 
