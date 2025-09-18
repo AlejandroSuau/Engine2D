@@ -1,6 +1,7 @@
 #include "grid/Grid.hpp"
 
 #include <assert.h>
+#include <algorithm>
 
 namespace Engine2D {
 
@@ -15,7 +16,8 @@ Grid::Grid(
     , cell_dimensions_(cell_dimensions) 
     , width_(static_cast<float>(col_count_ * cell_dimensions_)) 
     , height_(static_cast<float>(row_count_ * cell_dimensions_))
-    , cell_count_(col_count * row_count_) {
+    , cell_count_(col_count * row_count_)
+    , half_cell_(static_cast<float>(cell_dimensions_) / 2.f) {
     Init();
 }
 
@@ -54,8 +56,12 @@ Coords_t Grid::ColRowToCoords(ColRow_t colrow) const {
 }
 
 Coords_t Grid::TopLeftCoordsToCenterCoords(Coords_t coords) const {
-    const auto half_cell = static_cast<float>(cell_dimensions_) / 2.f;
-    return coords + Coords_t{half_cell, half_cell};
+    return coords + Coords_t{half_cell_, half_cell_};
+}
+
+Coords_t Grid::ColRowToCenterCoords(ColRow_t colrow) const {
+    const auto cell_coords = ColRowToCoords(colrow);
+    return TopLeftCoordsToCenterCoords(cell_coords);
 }
 
 ColRow_t Grid::IndexToColRow(std::size_t index) const {
@@ -66,6 +72,11 @@ ColRow_t Grid::IndexToColRow(std::size_t index) const {
 ColRow_t Grid::CoordsToColRow(Coords_t coords) const {
     return {static_cast<int>(coords.x - origin_.x) / static_cast<int>(cell_dimensions_),
             static_cast<int>(coords.y - origin_.y) / static_cast<int>(cell_dimensions_)};
+}
+
+void Grid::ClampColRowIntoMapDimensions(ColRow_t& colrow) const {
+    colrow.x = std::clamp(colrow.x, 0, static_cast<int>(col_count_) - 1);
+    colrow.y = std::clamp(colrow.y, 0, static_cast<int>(row_count_) - 1);
 }
 
 bool Grid::IsWalkable(std::size_t cell_index) const {

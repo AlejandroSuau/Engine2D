@@ -22,12 +22,15 @@ public:
     void ClearQueue();
     void Stop();
     EDirection Direction() const noexcept;
+    std::optional<Coords_t> FinalTarget() const;
+    void SetFinalTarget(Coords_t pos);
 
 private:
     Params params_;
     EDirection dir_ {EDirection::NONE};
     EDirection queued_dir_ {EDirection::NONE};
-    std::optional<Coords_t> target_;
+    std::optional<Coords_t> step_target_;
+    std::optional<Coords_t> final_target_;
 };
 
 }

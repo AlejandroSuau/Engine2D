@@ -14,7 +14,7 @@ void GridMover::Update(float dt, const Grid& grid, Coords_t& pos) {
     if (speed <= 0.f) return;
 
     // Set new target
-    if (!target_) {
+    if (!step_target_) {
         if (queued_dir_ != EDirection::NONE) {
             dir_ = queued_dir_;
         }
@@ -26,7 +26,7 @@ void GridMover::Update(float dt, const Grid& grid, Coords_t& pos) {
             Stop();
             return;
         }
-        target_ = candidate;
+        step_target_ = candidate;
     }
 
     // Move
@@ -34,15 +34,15 @@ void GridMover::Update(float dt, const Grid& grid, Coords_t& pos) {
     const float max_step = speed * dt;
     
     float remaining = 0.f;
-    if (IsHorizontally(v)) remaining = (target_->x - pos.x) * v.x;
-    else if (IsVertically(v)) remaining = (target_->y - pos.y) * v.y;
+    if (IsHorizontally(v)) remaining = (step_target_->x - pos.x) * v.x;
+    else if (IsVertically(v)) remaining = (step_target_->y - pos.y) * v.y;
 
     const float step = std::min(max_step, std::max(0.f, remaining));
     pos += Coords_t{v.x * step, v.y * step};
 
-    if (IsAtTarget(pos, *target_)) {
-        pos = *target_;
-        target_.reset();
+    if (IsAtTarget(pos, *step_target_)) {
+        pos = *step_target_;
+        step_target_.reset();
     }
 }
 
@@ -56,11 +56,19 @@ void GridMover::ClearQueue() {
 
 void GridMover::Stop() {
     dir_ = EDirection::NONE;
-    target_.reset();
+    step_target_.reset();
 }
 
 EDirection GridMover::Direction() const noexcept {
     return dir_;
+}
+
+std::optional<Coords_t> GridMover::FinalTarget() const {
+    return final_target_;
+}
+
+void GridMover::SetFinalTarget(Coords_t pos) {
+    final_target_ = pos;
 }
 
 }

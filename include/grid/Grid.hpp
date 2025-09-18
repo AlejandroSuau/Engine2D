@@ -47,8 +47,10 @@ public:
     std::size_t ColRowToIndex(ColRow_t colrow) const;
     Coords_t ColRowToCoords(ColRow_t colrow) const;
     Coords_t TopLeftCoordsToCenterCoords(Coords_t coords) const;
+    Coords_t ColRowToCenterCoords(ColRow_t colrow) const;
     ColRow_t IndexToColRow(std::size_t index) const;
     ColRow_t CoordsToColRow(Coords_t coords) const;
+    void ClampColRowIntoMapDimensions(ColRow_t& colrow) const;
 
     bool IsWalkable(std::size_t cell_index) const;
     bool AreCoordsWalkable(Coords_t coords) const;
@@ -75,6 +77,7 @@ private:
     const float width_;
     const float height_;
     const std::size_t cell_count_;
+    const float half_cell_;
 
     std::vector<Cell> cells_;
 
