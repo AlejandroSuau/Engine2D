@@ -41,9 +41,13 @@ public:
         std::size_t cell_dimensions
     );
 
-    NeighboursCross_t GetNeighboursCross();
-    NeighboursStar_t GetNeighboursStar();
+    /** [TOP, RIGHT, BOTTOM, LEFT] */
+    NeighboursCross_t GetNeighboursCross(ColRow_t from);
+    
+    /** [TOP-LEFT, TOP, TOP-RIGHT, RIGHT, BOTTOM-R, BOTTOM, BOTTOM-LEFT, LEFT] */
+    NeighboursStar_t GetNeighboursStar(ColRow_t from);
 
+    std::size_t CoordsToIndex(Coords_t coords) const;
     std::size_t ColRowToIndex(ColRow_t colrow) const;
     Coords_t ColRowToCoords(ColRow_t colrow) const;
     Coords_t TopLeftCoordsToCenterCoords(Coords_t coords) const;
@@ -60,8 +64,8 @@ public:
 
     std::vector<Cell>& Cells();
 
-    Cell& GetCell(Coords_t coords);
-    Cell& GetCell(ColRow_t colrow);
+    Cell* GetCell(Coords_t coords);
+    Cell* GetCell(ColRow_t colrow);
 
     std::size_t GetColCount() const;
     std::size_t GetRowCount() const;

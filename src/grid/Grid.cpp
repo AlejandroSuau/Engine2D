@@ -38,12 +38,51 @@ void Grid::Init() {
     }
 }
 
-Grid::NeighboursCross_t Grid::GetNeighboursCross() {
-    return NeighboursCross_t{};
+Grid::NeighboursCross_t Grid::GetNeighboursCross(ColRow_t from) {
+    const std::array<ColRow_t, 4> neighbours {{
+        {from.x,     from.y - 1}, // TOP
+        {from.x + 1, from.y},     // RIGHT
+        {from.x,     from.y + 1}, // BOTTOM
+        {from.x - 1, from.y}      // LEFT
+    }};
+
+    NeighboursCross_t result {};
+    std::size_t i = 0;
+    for (const auto& colrow : neighbours) {
+        auto* cell = GetCell(colrow);
+        result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
+        ++i;
+    }
+
+    return result;
 }
 
-Grid::NeighboursStar_t Grid::GetNeighboursStar() {
-    return NeighboursStar_t{};
+Grid::NeighboursStar_t Grid::GetNeighboursStar(ColRow_t from) {
+    const std::array<ColRow_t, 8> neighbours {{
+        {from.x - 1, from.y - 1},   // TOP-LEFT
+        {from.x,     from.y - 1},   // TOP
+        {from.x + 1, from.y - 1},   // TOP-RIGHT
+        {from.x + 1, from.y},       // RIGHT
+        {from.x + 1, from.y + 1},   // BOTTOM-RIGHT
+        {from.x,     from.y + 1},   // BOTTOM
+        {from.x - 1, from.y + 1},   // BOTTOM-LEFT
+        {from.x - 1, from.y}        // LEFT
+    }};
+
+    NeighboursStar_t result {};
+    std::size_t i = 0;
+    for (const auto& colrow : neighbours) {
+        auto* cell = GetCell(colrow);
+        result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
+        ++i;
+    }
+
+    return result;
+}
+
+std::size_t Grid::CoordsToIndex(Coords_t coords) const {
+    const auto colrow = CoordsToColRow(coords);
+    return ColRowToIndex(colrow);
 }
 
 std::size_t Grid::ColRowToIndex(ColRow_t colrow) const {
@@ -113,12 +152,22 @@ std::vector<Grid::Cell>& Grid::Cells() {
     return cells_;
 }
 
-Grid::Cell& Grid::GetCell(Coords_t coords) {
-    return cells_[0];
+Grid::Cell* Grid::GetCell(Coords_t coords) {
+    if (!AreCoordsInsideBoundaries(coords)) {
+        return nullptr;
+    }
+
+    const auto index = CoordsToIndex(coords);
+    return &cells_[index];
 }
 
-Grid::Cell& Grid::GetCell(ColRow_t colrow) {
-    return cells_[0];
+Grid::Cell* Grid::GetCell(ColRow_t colrow) {
+    if (!AreColRowInsideBoundaries(colrow)) {
+        return nullptr;
+    }
+    
+    const auto index = ColRowToIndex(colrow);
+    return &cells_[index];
 }
 
 std::size_t Grid::GetColCount() const {
