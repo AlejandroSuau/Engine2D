@@ -95,7 +95,6 @@ void Engine::Render() {
     game_->Render(*renderer_);
     
     // End Render
-
     SDL_RenderPresent(renderer);
 }
 
