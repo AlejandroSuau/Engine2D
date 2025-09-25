@@ -5,6 +5,24 @@
 
 namespace Engine2D {
 
+const Grid::NeighboursCrossColRow_t Grid::kNeighbourOffsetCross {{
+    {0, -1}, // TOP
+    {1,  0}, // RIGHT
+    {0,  1}, // BOTTOM
+    {-1, 0}, // LEFT
+}};
+
+const Grid::NeighboursStarColRow_t Grid::kNeighboursOffsetStar {{
+    {-1, -1}, // TOP-LEFT
+    { 0, -1}, // TOP
+    { 1, -1}, // TOP-RIGHT
+    { 1,  0}, // RIGHT
+    { 1,  1}, // BOTTOM-RIGHT
+    { 0,  1}, // BOTTOM
+    {-1,  1}, // BOTTOM-LEFT
+    {-1,  0}, // LEFT
+}};
+
 Grid::Grid(
     const Coords_t origin,
     std::size_t col_count,
@@ -38,17 +56,11 @@ void Grid::Init() {
     }
 }
 
-Grid::NeighboursCross_t Grid::GetNeighboursCross(ColRow_t from) {
-    const std::array<ColRow_t, 4> neighbours {{
-        {from.x,     from.y - 1}, // TOP
-        {from.x + 1, from.y},     // RIGHT
-        {from.x,     from.y + 1}, // BOTTOM
-        {from.x - 1, from.y}      // LEFT
-    }};
-
-    NeighboursCross_t result {};
+Grid::NeighboursCrossCell_t Grid::GetNeighboursCross(ColRow_t from) {
+    NeighboursCrossCell_t result {};
     std::size_t i = 0;
-    for (const auto& colrow : neighbours) {
+    for (const auto& colrow_offset : kNeighbourOffsetCross) {
+        const auto colrow = from + colrow_offset;
         auto* cell = GetCell(colrow);
         result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
         ++i;
@@ -57,21 +69,11 @@ Grid::NeighboursCross_t Grid::GetNeighboursCross(ColRow_t from) {
     return result;
 }
 
-Grid::NeighboursStar_t Grid::GetNeighboursStar(ColRow_t from) {
-    const std::array<ColRow_t, 8> neighbours {{
-        {from.x - 1, from.y - 1},   // TOP-LEFT
-        {from.x,     from.y - 1},   // TOP
-        {from.x + 1, from.y - 1},   // TOP-RIGHT
-        {from.x + 1, from.y},       // RIGHT
-        {from.x + 1, from.y + 1},   // BOTTOM-RIGHT
-        {from.x,     from.y + 1},   // BOTTOM
-        {from.x - 1, from.y + 1},   // BOTTOM-LEFT
-        {from.x - 1, from.y}        // LEFT
-    }};
-
-    NeighboursStar_t result {};
+Grid::NeighboursStarCell_t Grid::GetNeighboursStar(ColRow_t from) {
+    NeighboursStarCell_t result {};
     std::size_t i = 0;
-    for (const auto& colrow : neighbours) {
+    for (const auto& colrow_offset : kNeighboursOffsetStar) {
+        const auto colrow = from + colrow_offset;
         auto* cell = GetCell(colrow);
         result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
         ++i;
@@ -104,8 +106,8 @@ Coords_t Grid::ColRowToCenterCoords(ColRow_t colrow) const {
 }
 
 ColRow_t Grid::IndexToColRow(std::size_t index) const {
-    return {static_cast<int>(index / col_count_),
-            static_cast<int>(index % col_count_)};
+    return {static_cast<int>(index % col_count_),
+            static_cast<int>(index / col_count_)};
 }
 
 ColRow_t Grid::CoordsToColRow(Coords_t coords) const {
@@ -167,6 +169,14 @@ Grid::Cell* Grid::GetCell(ColRow_t colrow) {
     }
     
     const auto index = ColRowToIndex(colrow);
+    return &cells_[index];
+}
+
+Grid::Cell* Grid::GetCell(std::size_t index) {
+    if (index >= cell_count_) {
+        return nullptr;
+    }
+
     return &cells_[index];
 }
 

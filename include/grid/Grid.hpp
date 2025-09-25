@@ -31,8 +31,10 @@ public:
         bool is_walkable_;
     };
 
-    using NeighboursCross_t = std::array<std::optional<Cell>, 4>;
-    using NeighboursStar_t = std::array<std::optional<Cell>, 8>;
+    using NeighboursCrossCell_t = std::array<std::optional<Cell>, 4>;
+    using NeighboursCrossColRow_t = std::array<ColRow_t, 4>;
+    using NeighboursStarCell_t = std::array<std::optional<Cell>, 8>;
+    using NeighboursStarColRow_t = std::array<ColRow_t, 8>;
 
     Grid(
         const Coords_t origin,
@@ -42,10 +44,10 @@ public:
     );
 
     /** [TOP, RIGHT, BOTTOM, LEFT] */
-    NeighboursCross_t GetNeighboursCross(ColRow_t from);
+    NeighboursCrossCell_t GetNeighboursCross(ColRow_t from);
     
     /** [TOP-LEFT, TOP, TOP-RIGHT, RIGHT, BOTTOM-R, BOTTOM, BOTTOM-LEFT, LEFT] */
-    NeighboursStar_t GetNeighboursStar(ColRow_t from);
+    NeighboursStarCell_t GetNeighboursStar(ColRow_t from);
 
     std::size_t CoordsToIndex(Coords_t coords) const;
     std::size_t ColRowToIndex(ColRow_t colrow) const;
@@ -66,6 +68,7 @@ public:
 
     Cell* GetCell(Coords_t coords);
     Cell* GetCell(ColRow_t colrow);
+    Cell* GetCell(std::size_t index);
 
     std::size_t GetColCount() const;
     std::size_t GetRowCount() const;
@@ -73,6 +76,9 @@ public:
     std::size_t GetCellDimensions() const;
 
 private:
+    static const NeighboursCrossColRow_t kNeighbourOffsetCross;
+    static const NeighboursStarColRow_t kNeighboursOffsetStar;
+
     const Coords_t origin_;
     const std::size_t col_count_;
     const std::size_t row_count_;
