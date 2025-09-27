@@ -40,6 +40,7 @@ Grid::Grid(
 }
 
 void Grid::Init() {
+    const int default_cell_cost = 1;
     std::size_t i = 0;
     Coords_t pos = origin_;
     cells_.reserve(cell_count_);
@@ -48,7 +49,8 @@ void Grid::Init() {
         for (std::size_t col = 0; col < col_count_; ++col) {
             const auto center_pos = pos + Coords_t{
                 static_cast<float>(cell_dimensions_) / 2.f, static_cast<float>(cell_dimensions_) / 2.f};
-            cells_.push_back(Grid::Cell{i, pos, center_pos, Vec2<std::size_t>{col, row}, true});
+            // TODO: ColRow should be using ColRow_t as int, not std::size_t
+            cells_.push_back(Grid::Cell{i, pos, center_pos, Vec2<std::size_t>{col, row}, default_cell_cost, true});
             pos.x += cell_dimensions_;
             ++i;
         }
@@ -56,7 +58,7 @@ void Grid::Init() {
     }
 }
 
-Grid::NeighboursCrossCell_t Grid::GetNeighboursCross(ColRow_t from) {
+Grid::NeighboursCrossCell_t Grid::GetNeighboursCross(ColRow_t from) const {
     NeighboursCrossCell_t result {};
     std::size_t i = 0;
     for (const auto& colrow_offset : kNeighbourOffsetCross) {
@@ -69,7 +71,7 @@ Grid::NeighboursCrossCell_t Grid::GetNeighboursCross(ColRow_t from) {
     return result;
 }
 
-Grid::NeighboursStarCell_t Grid::GetNeighboursStar(ColRow_t from) {
+Grid::NeighboursStarCell_t Grid::GetNeighboursStar(ColRow_t from) const {
     NeighboursStarCell_t result {};
     std::size_t i = 0;
     for (const auto& colrow_offset : kNeighboursOffsetStar) {
@@ -154,30 +156,32 @@ std::vector<Grid::Cell>& Grid::Cells() {
     return cells_;
 }
 
-Grid::Cell* Grid::GetCell(Coords_t coords) {
-    if (!AreCoordsInsideBoundaries(coords)) {
-        return nullptr;
-    }
-
-    const auto index = CoordsToIndex(coords);
-    return &cells_[index];
+const std::vector<Grid::Cell>& Grid::Cells() const {
+    return cells_;
 }
 
-Grid::Cell* Grid::GetCell(ColRow_t colrow) {
-    if (!AreColRowInsideBoundaries(colrow)) {
-        return nullptr;
-    }
-    
-    const auto index = ColRowToIndex(colrow);
-    return &cells_[index];
+Grid::Cell* Grid::GetCell(Coords_t coords) noexcept {
+    return GetCellImpl(*this, coords);
 }
 
-Grid::Cell* Grid::GetCell(std::size_t index) {
-    if (index >= cell_count_) {
-        return nullptr;
-    }
+Grid::Cell* Grid::GetCell(ColRow_t colrow) noexcept {
+    return GetCellImpl(*this, colrow);
+}
 
-    return &cells_[index];
+Grid::Cell* Grid::GetCell(std::size_t index) noexcept {
+    return GetCellImpl(*this, index);
+}
+
+const Grid::Cell* Grid::GetCell(Coords_t coords) const noexcept {
+    return GetCellImpl(*this, coords);
+}
+
+const Grid::Cell* Grid::GetCell(ColRow_t colrow) const noexcept {
+    return GetCellImpl(*this, colrow);
+}
+
+const Grid::Cell* Grid::GetCell(std::size_t index) const noexcept {
+    return GetCellImpl(*this, index);
 }
 
 std::size_t Grid::GetColCount() const {
