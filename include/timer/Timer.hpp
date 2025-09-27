@@ -5,7 +5,7 @@ public:
     Timer(float duration_in_millisecs);
 
     void Start();
-    void Reset(bool is_running = false);
+    void Reset(bool is_running = true);
     bool Update(float dt);
     float ElapsedTime() const;
     bool DidFinish() const;

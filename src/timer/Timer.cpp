@@ -16,6 +16,8 @@ void Timer::Reset(bool is_running) {
 }
 
 bool Timer::Update(float dt) {
+    if (!is_running_) return false;
+
     elapsed_time_in_millisecs_ += dt;
     const bool did_finish = DidFinish();
     if (did_finish) {
