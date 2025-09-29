@@ -122,9 +122,9 @@ void Grid::ClampColRowIntoMapDimensions(ColRow_t& colrow) const {
     colrow.y = std::clamp(colrow.y, 0, static_cast<int>(row_count_) - 1);
 }
 
-bool Grid::IsWalkable(std::size_t cell_index) const {
-    assert(cell_index < cell_count_ && "Cell index above cells size");
-    return (cells_[cell_index].is_walkable_);
+bool Grid::IsWalkable(std::size_t index) const {
+    assert(index < cell_count_ && "Cell index above cells size");
+    return (cells_[index].is_walkable_);
 }
 
 bool Grid::AreCoordsWalkable(Coords_t coords) const {
@@ -150,6 +150,11 @@ bool Grid::AreColRowInsideBoundaries(ColRow_t colrow) const {
 bool Grid::AreCoordsInsideBoundaries(Coords_t coords) const {
     return (coords.x >= origin_.x && coords.x < (width_ + origin_.x) &&
             coords.y >= origin_.y && coords.y < (height_ + origin_.y));
+}
+
+bool Grid::SetIsWalkable(std::size_t index, bool is_walkable) {
+    assert(index < cell_count_ && "Cell index above cells size");
+    return cells_[index].is_walkable_ = is_walkable;
 }
 
 std::vector<Grid::Cell>& Grid::Cells() {

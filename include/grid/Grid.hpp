@@ -61,7 +61,7 @@ public:
     ColRow_t CoordsToColRow(Coords_t coords) const;
     void ClampColRowIntoMapDimensions(ColRow_t& colrow) const;
 
-    bool IsWalkable(std::size_t cell_index) const;
+    bool IsWalkable(std::size_t index) const;
     bool AreCoordsWalkable(Coords_t coords) const;
     bool AreColRowWalkable(ColRow_t colrow) const;
     bool AreColRowInsideBoundaries(ColRow_t colrow) const;
@@ -81,6 +81,8 @@ public:
     std::size_t GetRowCount() const;
     std::size_t GetCellCount() const;
     std::size_t GetCellDimensions() const;
+
+    bool SetIsWalkable(std::size_t index, bool is_walkable);
 
 private:
     static const NeighboursCrossColRow_t kNeighbourOffsetCross;
