@@ -16,7 +16,7 @@ public:
             std::size_t index,
             Coords_t top_left,
             Coords_t center,
-            Vec2<std::size_t> colrow,
+            ColRow_t colrow,
             int cost,
             bool is_walkable) 
             : index_(index)
@@ -97,6 +97,8 @@ private:
     const float height_;
     const std::size_t cell_count_;
     const float half_cell_;
+    const int col_count_int_;
+    const int row_count_int_;
 
     std::vector<Cell> cells_;
 

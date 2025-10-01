@@ -35,7 +35,9 @@ Grid::Grid(
     , width_(static_cast<float>(col_count_ * cell_dimensions_)) 
     , height_(static_cast<float>(row_count_ * cell_dimensions_))
     , cell_count_(col_count * row_count_)
-    , half_cell_(static_cast<float>(cell_dimensions_) / 2.f) {
+    , half_cell_(static_cast<float>(cell_dimensions_) / 2.f)
+    , row_count_int_(static_cast<int>(row_count))
+    , col_count_int_(static_cast<int>(col_count)) {
     Init();
 }
 
@@ -44,13 +46,11 @@ void Grid::Init() {
     std::size_t i = 0;
     Coords_t pos = origin_;
     cells_.reserve(cell_count_);
-    for (std::size_t row = 0; row < row_count_; ++row) {
+    for (int row = 0; row < row_count_int_; ++row) {
         pos.x = origin_.x;
-        for (std::size_t col = 0; col < col_count_; ++col) {
-            const auto center_pos = pos + Coords_t{
-                static_cast<float>(cell_dimensions_) / 2.f, static_cast<float>(cell_dimensions_) / 2.f};
-            // TODO: ColRow should be using ColRow_t as int, not std::size_t
-            cells_.push_back(Grid::Cell{i, pos, center_pos, Vec2<std::size_t>{col, row}, default_cell_cost, true});
+        for (int col = 0; col < row_count_int_; ++col) {
+            const auto center_pos = pos + Coords_t{half_cell_, half_cell_};
+            cells_.push_back(Grid::Cell{i, pos, center_pos, ColRow_t{col, row}, default_cell_cost, true});
             pos.x += cell_dimensions_;
             ++i;
         }
@@ -64,7 +64,7 @@ Grid::NeighboursCrossCell_t Grid::GetNeighboursCross(ColRow_t from) const {
     for (const auto& colrow_offset : kNeighbourOffsetCross) {
         const auto colrow = from + colrow_offset;
         auto* cell = GetCell(colrow);
-        result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
+        result[i] = (cell && cell->is_walkable_) ? std::optional<Cell>(*cell) : std::nullopt;
         ++i;
     }
 
@@ -77,7 +77,7 @@ Grid::NeighboursStarCell_t Grid::GetNeighboursStar(ColRow_t from) const {
     for (const auto& colrow_offset : kNeighboursOffsetStar) {
         const auto colrow = from + colrow_offset;
         auto* cell = GetCell(colrow);
-        result[i] = cell ? std::optional<Cell>(*cell) : std::nullopt;
+        result[i] = (cell && cell->is_walkable_) ? std::optional<Cell>(*cell) : std::nullopt;
         ++i;
     }
 
@@ -118,8 +118,8 @@ ColRow_t Grid::CoordsToColRow(Coords_t coords) const {
 }
 
 void Grid::ClampColRowIntoMapDimensions(ColRow_t& colrow) const {
-    colrow.x = std::clamp(colrow.x, 0, static_cast<int>(col_count_) - 1);
-    colrow.y = std::clamp(colrow.y, 0, static_cast<int>(row_count_) - 1);
+    colrow.x = std::clamp(colrow.x, 0, col_count_int_ - 1);
+    colrow.y = std::clamp(colrow.y, 0, row_count_int_ - 1);
 }
 
 bool Grid::IsWalkable(std::size_t index) const {
