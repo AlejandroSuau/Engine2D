@@ -4,6 +4,7 @@ project(Engine2D VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(ENGINE2D_BUILD_DEMOS "Build Engine2D demo apps" ON)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
@@ -89,27 +90,31 @@ if (APPLE)
     )
 endif()
 
+if (ENGINE2D_BUILD_DEMOS)
+    add_subdirectory(demos)
+endif()
+
 # ================= Example game (optional) =================
-add_executable(GameSandbox main.cpp)
-target_link_libraries(GameSandbox PRIVATE Engine2D)
+# add_executable(GameSandbox main.cpp)
+# target_link_libraries(GameSandbox PRIVATE Engine2D)
 
 # ================= Assets copy =================
-set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
-add_custom_command(
-    TARGET GameSandbox POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
-)
-if (WIN32)
-    add_custom_command(TARGET GameSandbox POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:SDL2::SDL2>
-            $<TARGET_FILE:SDL2::SDL2main>
-            $<TARGET_FILE:SDL2_image::SDL2_image>
-            $<TARGET_FILE:SDL2_mixer::SDL2_mixer>
-            $<TARGET_FILE:SDL2_ttf::SDL2_ttf>
-        $<TARGET_FILE_DIR:GameSandbox>
-    )
-endif()
+# set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
+# set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
+# add_custom_command(
+#     TARGET GameSandbox POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#     ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+# )
+# if (WIN32)
+#     add_custom_command(TARGET GameSandbox POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#             $<TARGET_FILE:SDL2::SDL2>
+#             $<TARGET_FILE:SDL2::SDL2main>
+#             $<TARGET_FILE:SDL2_image::SDL2_image>
+#             $<TARGET_FILE:SDL2_mixer::SDL2_mixer>
+#             $<TARGET_FILE:SDL2_ttf::SDL2_ttf>
+#         $<TARGET_FILE_DIR:GameSandbox>
+#     )
+# endif()
 
