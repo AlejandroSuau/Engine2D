@@ -5,7 +5,7 @@
 #include <optional>
 #include <tuple>
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Concept
 {
 
 template<class F>

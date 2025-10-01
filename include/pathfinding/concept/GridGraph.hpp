@@ -2,7 +2,7 @@
 
 #include "utils/Types.hpp"
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Concept
 {
 
 template<class G>

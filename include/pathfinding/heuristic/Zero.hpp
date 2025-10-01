@@ -4,11 +4,11 @@
 
 #include "utils/Types.hpp"
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Heuristic
 {
 
 struct ZeroHeuristic {
-    template<GridGraph G>
+    template<Concept::GridGraph G>
     DistanceCost_t operator()(const G&, NodeId_t, NodeId_t) const { return 0; }
 };
 

@@ -7,7 +7,7 @@
 #include <tuple>
 #include <optional>
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Frontier
 {
 
 // A*: priority f = g + h

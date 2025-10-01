@@ -9,7 +9,7 @@
 #include <vector>
 #include <optional>
 
-namespace Engine2D {
+namespace Engine2D::Pathfinding {
 
 struct SearchBuffers {
     std::vector<bool>                    closed;
@@ -24,7 +24,7 @@ class Pathfinder {
 public:
     using Path = std::vector<NodeId_t>;
 
-    Pathfinder(G& grid, NodeId_t start, NodeId_t goal)
+    Pathfinder(const G& grid, NodeId_t start, NodeId_t goal)
         : g_{grid}
         , start_{start}
         , goal_{goal} {
@@ -94,9 +94,11 @@ public:
     const auto& GCosts() const { return buf_.g; }
     const auto& Parents() const { return buf_.parent; }
     const auto& Closed() const { return buf_.closed; }
+    NodeId_t GetStartIndex() const { return start_; }
+    NodeId_t GetGoalIndex() const { return goal_; }
 
 private:
-    G& g_;
+    const G& g_;
     NodeId_t start_, goal_;
     F frontier_;
     H heur_;

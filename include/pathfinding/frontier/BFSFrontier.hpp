@@ -6,7 +6,7 @@
 #include <tuple>
 #include <optional>
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Frontier
 {
 // BFS: cola FIFO, ignora h y el coste (o asume aristas unitarias)
 struct BFSFrontier {

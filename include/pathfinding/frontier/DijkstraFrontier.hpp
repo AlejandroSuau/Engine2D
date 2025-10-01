@@ -7,7 +7,7 @@
 #include <vector>
 #include <tuple>
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Frontier
 {
 
 struct DijkstraFrontier {

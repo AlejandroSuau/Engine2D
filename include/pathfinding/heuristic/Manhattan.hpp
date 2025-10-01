@@ -4,14 +4,14 @@
 
 #include "utils/Types.hpp"
 
-namespace Engine2D
+namespace Engine2D::Pathfinding::Heuristic
 {
 
 struct Manhattan {
-    template<GridGraph G>
+    template<Concept::GridGraph G>
     DistanceCost_t operator()(const G& g, NodeId_t a, NodeId_t b) const {
-        auto [ax, ay] = g.IndexToColRow(a);
-        auto [bx, by] = g.IndexToColRow(b);
+        const auto [ax, ay] = g.IndexToColRow(a);
+        const auto [bx, by] = g.IndexToColRow(b);
         return static_cast<DistanceCost_t>(std::abs(ax - bx) + std::abs(ay - by));
     }
 };
