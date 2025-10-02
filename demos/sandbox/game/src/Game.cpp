@@ -1,36 +1,22 @@
-#include <SDL2/SDL.h>
+#include "Game.hpp"
 
-#include "Engine2D.hpp"
-#include "game/IGame.hpp"
-#include "renderer/Renderer.hpp"
-#include "grid/Grid.hpp"
-
-struct Game : public Engine2D::IGame {
-    void Start() override;
-    void Update(float dt) override;
-    void Render(Engine2D::Renderer& renderer) override;
-    void HandleEvent(const SDL_Event& event) override;
-    std::string GetWindowTitle() override;
-    int GetScreenWidth() override;
-    int GetScreenHeight() override;
-
-    const Engine2D::Grid& GetGrid() const;
-
-    Engine2D::Grid grid_ {
-        {0.f, 0.f},
-        15,
-        15,
-        20
-    };
-};
+Game::Game(Engine2D::Engine& engine) 
+    : engine_(engine)
+    , grid_({0.f, 0.f}, 15, 15, 20)
+    , texture_manager_(*engine_.SDLRenderer())
+    , loadbar_texture_(nullptr) {}
 
 void Game::Start() {
+    loadbar_texture_ = texture_manager_.LoadTexture("assets/loadbar.png", "loadbar-1");
 }
 
 void Game::Update(float dt) {
 }
 
 void Game::Render(Engine2D::Renderer& renderer) {
+    // Render Texture
+    renderer.RenderTexture(loadbar_texture_, {0, 0, 1132, 71}, {0.f, 0.f, 100.f, 20.f});
+
     // Render Grid
     const auto& cells = grid_.Cells();
     const auto cell_dimensions = static_cast<float>(grid_.GetCellDimensions());
@@ -73,10 +59,3 @@ void Game::HandleEvent(const SDL_Event& event) {
 std::string Game::GetWindowTitle() { return "Hello Alejandro"; }
 int Game::GetScreenWidth() { return 400; }
 int Game::GetScreenHeight() { return 400; }
-
-int main(int argc, char** argv) {
-    Engine2D::Engine eng;
-    eng.Run(std::make_unique<Game>());
-
-    return 0;
-}

@@ -22,6 +22,8 @@ public:
     void Run(std::unique_ptr<IGame> game);
     void Shutdown();
 
+    SDL_Renderer* SDLRenderer();
+
 private:
     // SDL Initializers
     std::unique_ptr<SDLInitializer::Main> sdl_;

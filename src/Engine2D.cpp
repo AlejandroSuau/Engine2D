@@ -114,4 +114,8 @@ void Engine::Shutdown() {
     is_running_ = false;
 }
 
+SDL_Renderer* Engine::SDLRenderer() {
+    return sdl_renderer_.get();
+}
+
 }
