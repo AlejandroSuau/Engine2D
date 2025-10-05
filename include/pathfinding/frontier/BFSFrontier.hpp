@@ -8,7 +8,7 @@
 
 namespace Engine2D::Pathfinding::Frontier
 {
-// BFS: cola FIFO, ignora h y el coste (o asume aristas unitarias)
+
 struct BFSFrontier {
     std::queue<std::tuple<NodeId_t, DistanceCost_t, std::optional<NodeId_t>>> q;
 

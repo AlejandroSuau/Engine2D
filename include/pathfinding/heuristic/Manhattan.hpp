@@ -10,9 +10,11 @@ namespace Engine2D::Pathfinding::Heuristic
 struct Manhattan {
     template<Concept::GridGraph G>
     DistanceCost_t operator()(const G& g, NodeId_t a, NodeId_t b) const {
-        const auto [ax, ay] = g.IndexToColRow(a);
-        const auto [bx, by] = g.IndexToColRow(b);
-        return static_cast<DistanceCost_t>(std::abs(ax - bx) + std::abs(ay - by));
+        const auto a_colrow = g.IndexToColRow(a);
+        const auto b_colrow = g.IndexToColRow(b);
+        const auto dx = std::abs(a_colrow.x - b_colrow.x);
+        const auto dy = std::abs(a_colrow.y - b_colrow.y);
+        return static_cast<DistanceCost_t>(dx + dy);
     }
 };
 

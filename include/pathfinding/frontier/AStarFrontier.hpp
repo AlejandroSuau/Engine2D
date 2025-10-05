@@ -10,7 +10,6 @@
 namespace Engine2D::Pathfinding::Frontier
 {
 
-// A*: priority f = g + h
 struct AStarFrontier {
     using Item = std::tuple<NodeId_t, DistanceCost_t, DistanceCost_t, std::optional<NodeId_t>>; // (n, g, f, p)
     struct Cmp { bool operator()(const Item& a, const Item& b) const {

@@ -6,6 +6,10 @@
 // #include "pathfinding/concept/Frontier.hpp"
 // #include "pathfinding/concept/Heuristic.hpp"
 
+// BFS - ZeroHeuristic - 4dir
+// Dijkstra - ZeroHeristic - 4-8 dir
+// A* - Manhattan / Octile / Chebyshev / Euclidean 
+
 #include <vector>
 #include <optional>
 
@@ -58,10 +62,15 @@ public:
         }
 
         for (auto [v, w] : neigh_(g_, u)) {
-            if (buf_.closed[v]) continue;
+            if (g_u == kINF || w > (kINF - g_u)) continue;
+
             const DistanceCost_t g_new = g_u + w;
             if (g_new < buf_.g[v]) {
                 buf_.g[v] = g_new;
+                if (buf_.closed[v]) {
+                    buf_.closed[v] = false;
+                }
+
                 Push(v, u);
             }
         }
@@ -81,21 +90,27 @@ public:
         done_ = false;
 
         const auto N = g_.GetCellCount();
-        buf_.closed.assign(N, false);
-        buf_.g.assign(N, kINF);
-        buf_.parent.assign(N, std::nullopt);
+        if (buf_.g.size() == N) {
+            std::fill(buf_.g.begin(), buf_.g.end(), kINF);
+            std::fill(buf_.closed.begin(), buf_.closed.end(), false);
+            std::fill(buf_.parent.begin(), buf_.parent.end(), std::nullopt);
+        } else {
+            buf_.g.assign(N, kINF);
+            buf_.closed.assign(N, false);
+            buf_.parent.assign(N, std::nullopt);
+        }
 
         frontier_.clear();
         buf_.g[start_] = 0;
         Push(start_, std::nullopt);
     }
 
-    const Path& GetPath() const { return path_; }
-    const auto& GCosts() const { return buf_.g; }
-    const auto& Parents() const { return buf_.parent; }
-    const auto& Closed() const { return buf_.closed; }
-    NodeId_t GetStartIndex() const { return start_; }
-    NodeId_t GetGoalIndex() const { return goal_; }
+    [[nodiscard]] const Path& GetPath() const noexcept { return path_; }
+    [[nodiscard]] const auto& GCosts() const noexcept { return buf_.g; }
+    [[nodiscard]] const auto& Parents() const noexcept { return buf_.parent; }
+    [[nodiscard]] const auto& Closed() const noexcept { return buf_.closed; }
+    [[nodiscard]] NodeId_t GetStartIndex() const noexcept { return start_; }
+    [[nodiscard]] NodeId_t GetGoalIndex() const noexcept { return goal_; }
 
 private:
     const G& g_;

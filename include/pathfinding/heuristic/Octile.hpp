@@ -7,14 +7,17 @@
 namespace Engine2D::Pathfinding::Heuristic
 {
 
-struct Euclidean {
+struct Octile {
     template<Concept::GridGraph G>
     DistanceCost_t operator()(const G& g, NodeId_t a, NodeId_t b) const {
         const auto a_colrow = g.IndexToColRow(a);
         const auto b_colrow = g.IndexToColRow(b);
-        const auto dx = a_colrow.x - b_colrow.x;
-        const auto dy = a_colrow.y - b_colrow.y;
-        return static_cast<DistanceCost_t>(std::lround(std::sqrt(dx*dx + dy*dy)));
+        const auto dx = std::abs(a_colrow.x - b_colrow.x);
+        const auto dy = std::abs(a_colrow.y - b_colrow.y);
+        static constexpr int D = 10;
+        static constexpr int D2 = 14;
+        return static_cast<DistanceCost_t>(
+            D*(dx + dy) + (D2 - 2 * D) * std::min(dx, dy));
     }
 };
 
