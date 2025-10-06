@@ -1,44 +1,55 @@
 #include "texture/TextureManager.hpp"
 
+namespace Engine2D {
+
 TextureManager::TextureManager(SDL_Renderer& renderer) 
-    : renderer_(renderer) {}
+    : renderer_(renderer) {
+    locator_.LogPaths();
+}
 
 TextureManager::~TextureManager() {
-    ClearAllTextures();
+    ClearAll();
 }
 
-SDL_Texture* TextureManager::LoadTexture(const std::string& file_path, const std::string& id) {
-    if (textures_.count(id) == 0) {
-        SDL_Texture* texture = IMG_LoadTexture(&renderer_, file_path.c_str());
-        if (!texture) {
-            SDL_Log("Failed to load texture: %s. SDL Error: %s", file_path.c_str(), SDL_GetError());
-            return nullptr;
-        }
-        SDL_Log("[TEXTURE] Loading new texture: %s", file_path.c_str());
-        textures_[id] = texture;
+SDL_Texture* TextureManager::LoadTexture(const std::string& rel_path, const std::string& id) {
+    if (auto* texture = Get(id)) {
+        return texture;
     }
-    return textures_[id];
+
+    const auto full = locator_.Resolve(rel_path);
+    SDL_Log("[TEXTURE] Loading: %s", full.string().c_str());
+
+    SDL_Texture* raw = IMG_LoadTexture(&renderer_, full.string().c_str());
+    if (!raw) {
+        SDL_Log("Failed to load: %s. IMG: %s", full.string().c_str(), IMG_GetError());
+        return nullptr;
+    }
+
+    auto [it, inserted] = textures_.try_emplace(id, raw);
+    if (!inserted) {
+        SDL_DestroyTexture(raw);
+    }
+
+    return it->second.get();
 }
 
-SDL_Texture* TextureManager::GetTexture(const std::string& id) {
+SDL_Texture* TextureManager::Get(const std::string& id) {
     auto it = textures_.find(id);
     if (it != textures_.end()) {
-        return it->second;
+        return it->second.get();
     }
     return nullptr;
 }
 
-void TextureManager::RemoveTexture(const std::string& file_path) {
-    auto it = textures_.find(file_path);
+void TextureManager::RemoveById(const std::string& id) {
+    auto it = textures_.find(id);
     if (it != textures_.end()) {
-        SDL_DestroyTexture(it->second);
         textures_.erase(it);
     }
 }
 
-void TextureManager::ClearAllTextures() {
-    for (auto& texture_pair : textures_) {
-        SDL_DestroyTexture(texture_pair.second);
-    }
+void TextureManager::ClearAll() {
     textures_.clear();
+}
+
 }
