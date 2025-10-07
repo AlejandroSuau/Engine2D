@@ -1,44 +1,57 @@
 #include "font/FontManager.hpp"
 
+#include "asset_locator/AssetLocator.hpp"
+
+namespace Engine2D {
+
+FontManager::FontManager(AssetLocator& locator) 
+    : locator_(locator) {}
+
 FontManager::~FontManager() {
     ClearFonts();
 }
 
 TTF_Font* FontManager::GetFont(const std::string& font_id) {
     auto it = fonts_.find(font_id);
-    return (it == fonts_.end()) ? nullptr : it->second; 
+    return (it == fonts_.end()) ? nullptr : it->second.get(); 
 }
 
-TTF_Font* FontManager::LoadFont(const std::string& file_path, int font_size, const std::string& custom_id) {
-    std::string font_id = custom_id.empty() ? file_path : custom_id;
-    if (fonts_.count(font_id) == 0) {
-        TTF_Font* font = TTF_OpenFont(file_path.c_str(), font_size);
-        if (!font) {
-            SDL_Log("Failed to load font: %s", file_path.c_str());
-            return nullptr;
-        }
+TTF_Font* FontManager::LoadFont(const std::string& rel_path, int font_size, const std::string& id) {
+    const std::string new_id = id.empty()
+        ? (rel_path + "#" + std::to_string(font_size))
+        : id;
 
-        SDL_Log("[FONT] Font loaded successfully {path='%s', id='%s'}", file_path.c_str(), font_id.c_str());
-        fonts_[font_id] = font;
+    if (auto* font = GetFont(new_id)) {
+        return font;
     }
 
-    return fonts_[font_id];
+    const auto full = locator_.Resolve(rel_path);
+    SDL_Log("[FONT] Loading: %s", full.string().c_str());
+
+    TTF_Font* raw = TTF_OpenFont(full.string().c_str(), font_size);
+    if (!raw) {
+        SDL_Log("Failed to load: %s. FONT: %s", full.string().c_str(), TTF_GetError());
+        return nullptr;
+    }
+
+    auto [it, inserted] = fonts_.try_emplace(id, raw);
+    if (!inserted) {
+        TTF_CloseFont(raw);
+    }
+
+    return it->second.get();
 }
 
-void FontManager::RemoveFont(const std::string& font_id) {
-    auto it = fonts_.find(font_id.c_str());
-    if (it == fonts_.end()) {
-        SDL_Log("[FONT WARNING ]Trying to remove unexpected font: %s", font_id.c_str());
-    } else {
-        TTF_CloseFont(it->second);
+void FontManager::RemoveFont(const std::string& id) {
+    auto it = fonts_.find(id);
+    if (it != fonts_.end()) {
         fonts_.erase(it);
-        SDL_Log("[FONT] Removed font: %s", font_id.c_str());
+        SDL_Log("[FONT] Removed: %s", id.c_str());
     }
 }
 
 void FontManager::ClearFonts() {
-    for (const auto& [font_id, font] : fonts_) {
-        TTF_CloseFont(font);
-    }
     fonts_.clear();
+}
+
 }

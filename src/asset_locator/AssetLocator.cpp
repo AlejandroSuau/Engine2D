@@ -1,4 +1,4 @@
-#include "texture/AssetLocator.hpp"
+#include "asset_locator/AssetLocator.hpp"
 
 namespace Engine2D {
 

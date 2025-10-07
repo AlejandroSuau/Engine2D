@@ -1,7 +1,5 @@
 #pragma once
 
-#include "texture/AssetLocator.hpp"
-
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -9,6 +7,8 @@
 #include <SDL_image.h>
 
 namespace Engine2D {
+
+class AssetLocator;
 
 class TextureManager {
 public:
@@ -18,12 +18,12 @@ public:
     };
     using TexturePtr = std::unique_ptr<SDL_Texture, SDLTextureDeleter>;
 
-    TextureManager(SDL_Renderer& renderer);
+    TextureManager(SDL_Renderer& renderer, AssetLocator& locator);
     ~TextureManager();
 
     SDL_Texture* LoadTexture(const std::string& rel_path, const std::string& id);
-    SDL_Texture* Get(const std::string& id);
-    void RemoveById(const std::string& id);
+    SDL_Texture* GetTexture(const std::string& id);
+    void RemoveTexture(const std::string& id);
 
 private:
     TextureManager(const TextureManager&) noexcept = delete;
@@ -32,7 +32,7 @@ private:
     TextureManager& operator=(TextureManager&&) noexcept = delete;
 
     SDL_Renderer& renderer_;
-    AssetLocator locator_;
+    AssetLocator& locator_;
     std::unordered_map<std::string, TexturePtr> textures_;
 
     void ClearAll();

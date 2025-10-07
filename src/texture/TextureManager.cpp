@@ -1,9 +1,12 @@
 #include "texture/TextureManager.hpp"
 
+#include "asset_locator/AssetLocator.hpp"
+
 namespace Engine2D {
 
-TextureManager::TextureManager(SDL_Renderer& renderer) 
-    : renderer_(renderer) {
+TextureManager::TextureManager(SDL_Renderer& renderer, AssetLocator& locator) 
+    : renderer_(renderer)
+    , locator_(locator) {
     locator_.LogPaths();
 }
 
@@ -12,7 +15,7 @@ TextureManager::~TextureManager() {
 }
 
 SDL_Texture* TextureManager::LoadTexture(const std::string& rel_path, const std::string& id) {
-    if (auto* texture = Get(id)) {
+    if (auto* texture = GetTexture(id)) {
         return texture;
     }
 
@@ -33,7 +36,7 @@ SDL_Texture* TextureManager::LoadTexture(const std::string& rel_path, const std:
     return it->second.get();
 }
 
-SDL_Texture* TextureManager::Get(const std::string& id) {
+SDL_Texture* TextureManager::GetTexture(const std::string& id) {
     auto it = textures_.find(id);
     if (it != textures_.end()) {
         return it->second.get();
@@ -41,7 +44,7 @@ SDL_Texture* TextureManager::Get(const std::string& id) {
     return nullptr;
 }
 
-void TextureManager::RemoveById(const std::string& id) {
+void TextureManager::RemoveTexture(const std::string& id) {
     auto it = textures_.find(id);
     if (it != textures_.end()) {
         textures_.erase(it);
