@@ -22,6 +22,7 @@
 #include "pathfinding/heuristic/Euclidean.hpp"
 #include "pathfinding/heuristic/Octile.hpp"
 #include "pathfinding/heuristic/Chebyshev.hpp"
+#include "pathfinding/heuristic/Zero.hpp"
 
 class Game : public Engine2D::IGame {
 public:
@@ -47,24 +48,46 @@ private:
     SDL_Texture* loadbar_texture_;
     TTF_Font* font_;
 
+    Engine2D::Timer pathfinder_timer_{0.2f};
+    //////////////// BFS ////////////////
+    /*Engine2D::Pathfinding::Pathfinder<
+        Engine2D::Grid,
+        Engine2D::Pathfinding::Frontier::BFSFrontier,
+        Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
+        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
+        grid_,
+        grid_.ColRowToIndex({3, 10}),
+        grid_.ColRowToIndex({15, 10})
+    };*/
+
+    //////////////// Dijkstra ////////////////
+    /*Engine2D::Pathfinding::Pathfinder<
+        Engine2D::Grid,
+        Engine2D::Pathfinding::Frontier::DijkstraFrontier,
+        Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
+        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
+        grid_,
+        grid_.ColRowToIndex({3, 10}),
+        grid_.ColRowToIndex({15, 10})
+    };*/
+
+    //////////////// A* Example - Star - Cross ////////////////
     /*Engine2D::Pathfinding::Pathfinder<
         Engine2D::Grid,
         Engine2D::Pathfinding::Frontier::AStarFrontier,
         Engine2D::Pathfinding::Heuristic::Euclidean,
         Engine2D::Pathfinding::NeighbourProvider::StarProvider> pathfinder_{
         grid_,
-        grid_.ColRowToIndex({0, 10}),
-        grid_.ColRowToIndex({10, 5})
+        grid_.ColRowToIndex({3, 10}),
+        grid_.ColRowToIndex({15, 10})
     };*/
-
-    Engine2D::Timer pathfinder_timer_{0.2f};
     Engine2D::Pathfinding::Pathfinder<
         Engine2D::Grid,
-        Engine2D::Pathfinding::Frontier::DijkstraFrontier,
+        Engine2D::Pathfinding::Frontier::AStarFrontier,
         Engine2D::Pathfinding::Heuristic::Euclidean,
         Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
         grid_,
-        grid_.ColRowToIndex({0, 10}),
-        grid_.ColRowToIndex({10, 5})
+        grid_.ColRowToIndex({3, 10}),
+        grid_.ColRowToIndex({15, 10})
     };
 };

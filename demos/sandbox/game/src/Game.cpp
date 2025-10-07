@@ -110,9 +110,16 @@ void Game::HandleEvent(const SDL_Event& event) {
 
     if (event.type == SDL_KEYUP) {
         if (event.key.keysym.scancode == SDL_SCANCODE_C) {
-            pathfinder_timer_.Start();
+            if (pathfinder_timer_.IsRunning()) {
+                pathfinder_.Reset();
+            } else {
+                pathfinder_timer_.Start();
+            }
         } else if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
             pathfinder_.Step();
+        } else if (event.key.keysym.scancode == SDL_SCANCODE_R) {
+            pathfinder_.Reset();
+            pathfinder_timer_.Reset(false);
         }
     }
 }
