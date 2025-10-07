@@ -1,11 +1,16 @@
 #include <SDL2/SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 
 #include "Engine2D.hpp"
 #include "game/IGame.hpp"
 #include "renderer/Renderer.hpp"
 #include "grid/Grid.hpp"
 #include "texture/TextureManager.hpp"
+#include "font/FontManager.hpp"
+#include "asset_locator/AssetLocator.hpp"
+
+#include "timer/Timer.hpp"
 
 #include "pathfinding/Pathfinder.hpp"
 #include "pathfinding/frontier/AStarFrontier.hpp"
@@ -35,14 +40,29 @@ public:
 private:
     Engine2D::Engine& engine_;
     Engine2D::Grid grid_;
-    TextureManager texture_manager_;
-    SDL_Texture* loadbar_texture_;
+    Engine2D::AssetLocator asset_locator_;
+    Engine2D::TextureManager texture_manager_;
+    Engine2D::FontManager font_manager_;
 
-    Engine2D::Pathfinding::Pathfinder<
+    SDL_Texture* loadbar_texture_;
+    TTF_Font* font_;
+
+    /*Engine2D::Pathfinding::Pathfinder<
         Engine2D::Grid,
         Engine2D::Pathfinding::Frontier::AStarFrontier,
         Engine2D::Pathfinding::Heuristic::Euclidean,
         Engine2D::Pathfinding::NeighbourProvider::StarProvider> pathfinder_{
+        grid_,
+        grid_.ColRowToIndex({0, 10}),
+        grid_.ColRowToIndex({10, 5})
+    };*/
+
+    Engine2D::Timer pathfinder_timer_{0.2f};
+    Engine2D::Pathfinding::Pathfinder<
+        Engine2D::Grid,
+        Engine2D::Pathfinding::Frontier::DijkstraFrontier,
+        Engine2D::Pathfinding::Heuristic::Euclidean,
+        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
         grid_,
         grid_.ColRowToIndex({0, 10}),
         grid_.ColRowToIndex({10, 5})
