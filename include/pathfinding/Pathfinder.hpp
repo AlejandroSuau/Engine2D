@@ -112,6 +112,9 @@ public:
     [[nodiscard]] NodeId_t GetStartIndex() const noexcept { return start_; }
     [[nodiscard]] NodeId_t GetGoalIndex() const noexcept { return goal_; }
 
+    void SetStartIndex(NodeId_t new_index) {start_ = new_index; }
+    void SetGoalIndex(NodeId_t new_index) { goal_ = new_index; }
+
 private:
     const G& g_;
     NodeId_t start_, goal_;
