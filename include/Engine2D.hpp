@@ -24,6 +24,8 @@ public:
 
     SDL_Renderer* SDLRenderer();
 
+    void SetCursorDisplay(bool show);
+
 private:
     // SDL Initializers
     std::unique_ptr<SDLInitializer::Main> sdl_;

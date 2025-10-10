@@ -19,8 +19,8 @@ Engine::Engine()
     , window_(
         SDL_CreateWindow(
             "Engine",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED,
             0,
             0,
             SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN),
@@ -38,7 +38,11 @@ Engine::Engine()
 
     SDL_SetRenderDrawBlendMode(sdl_renderer_.get(), SDL_BLENDMODE_BLEND);
 }
-    
+
+void Engine::SetCursorDisplay(bool show) {
+    SDL_ShowCursor(show ? SDL_ENABLE : SDL_DISABLE);
+}
+
 void Engine::Run(std::unique_ptr<IGame> game) {
     is_running_ = true;
     game_ = std::move(game);
@@ -52,6 +56,9 @@ void Engine::Run(std::unique_ptr<IGame> game) {
 void Engine::Init() {
     SDL_SetWindowSize(window_.get(), game_->GetScreenWidth(), game_->GetScreenHeight());
     SDL_SetWindowTitle(window_.get(), game_->GetWindowTitle().c_str());
+    SDL_SetWindowPosition(window_.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_SetWindowResizable(window_.get(), SDL_FALSE);
+
     SDL_ShowWindow(window_.get());
 }
 
