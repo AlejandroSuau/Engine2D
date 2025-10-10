@@ -61,6 +61,7 @@ public:
             return true;
         }
 
+        ++step_count_;
         for (auto [v, w] : neigh_(g_, u)) {
             if (g_u == kINF || w > (kINF - g_u)) continue;
 
@@ -100,6 +101,7 @@ public:
             buf_.parent.assign(N, std::nullopt);
         }
 
+        step_count_ = 0;
         frontier_.clear();
         buf_.g[start_] = 0;
         Push(start_, std::nullopt);
@@ -111,6 +113,7 @@ public:
     [[nodiscard]] const auto& Closed() const noexcept { return buf_.closed; }
     [[nodiscard]] NodeId_t GetStartIndex() const noexcept { return start_; }
     [[nodiscard]] NodeId_t GetGoalIndex() const noexcept { return goal_; }
+    [[nodiscard]] int GetStepCount() const { return step_count_; }
 
     void SetStartIndex(NodeId_t new_index) {start_ = new_index; }
     void SetGoalIndex(NodeId_t new_index) { goal_ = new_index; }
@@ -124,6 +127,7 @@ private:
     SearchBuffers buf_;
     Path path_;
     bool done_{false};
+    int step_count_{0};
 
     void Push(NodeId_t n, std::optional<NodeId_t> parent) {
         const DistanceCost_t h = heur_(g_, n, goal_);
@@ -148,3 +152,37 @@ private:
 };
 
 }
+
+/* Examples
+//////////////// BFS ////////////////
+Engine2D::Pathfinding::Pathfinder<
+    Engine2D::Grid,
+    Engine2D::Pathfinding::Frontier::BFSFrontier,
+    Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
+    Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
+    grid_,
+    grid_.ColRowToIndex({3, 10}),
+    grid_.ColRowToIndex({15, 10})
+};
+
+//////////////// Dijkstra ////////////////
+Engine2D::Pathfinding::Pathfinder<
+    Engine2D::Grid,
+    Engine2D::Pathfinding::Frontier::DijkstraFrontier,
+    Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
+    Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
+    grid_,
+    grid_.ColRowToIndex({3, 10}),
+    grid_.ColRowToIndex({15, 10})
+};
+
+//////////////// A* Example - Star - Cross ////////////////
+Engine2D::Pathfinding::Pathfinder<
+    Engine2D::Grid,
+    Engine2D::Pathfinding::Frontier::AStarFrontier,
+    Engine2D::Pathfinding::Heuristic::Euclidean,
+    Engine2D::Pathfinding::NeighbourProvider::StarProvider> pathfinder_{
+    grid_,
+    grid_.ColRowToIndex({3, 10}),
+    grid_.ColRowToIndex({15, 10})
+};*/
