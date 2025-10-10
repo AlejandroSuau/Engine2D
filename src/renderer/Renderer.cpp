@@ -56,4 +56,8 @@ void Renderer::RenderText(
     SDL_FreeSurface(text_surface);
 }
 
+void Renderer::RenderLine(Vec2<float> point_from, Vec2<float> point_to) {
+    SDL_RenderDrawLineF(renderer_, point_from.x, point_from.y, point_to.x, point_to.y);
+}
+
 }

@@ -28,6 +28,7 @@ public:
         SDL_Color color,
         Vec2<int> coords,
         bool centered = true);
+    void RenderLine(Vec2<float> point_from, Vec2<float> point_to);
 
 private:
     SDL_Renderer* renderer_;
