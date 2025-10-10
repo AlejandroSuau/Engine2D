@@ -5,6 +5,7 @@
 #include "Engine2D.hpp"
 #include "game/IGame.hpp"
 #include "renderer/Renderer.hpp"
+#include "grid/GridMover.hpp"
 #include "grid/Grid.hpp"
 #include "texture/TextureManager.hpp"
 #include "font/FontManager.hpp"
@@ -24,6 +25,17 @@
 #include "pathfinding/heuristic/Chebyshev.hpp"
 #include "pathfinding/heuristic/Zero.hpp"
 
+#include <string>
+#include <array>
+
+enum class EMouseUserAction {
+    MOVING_START_NODE,
+    MOVING_GOAL_NODE,
+    DRAWING_BLOCKS,
+    UNDRAWING_BLOCKS,
+    NONE
+};
+
 class Game : public Engine2D::IGame {
 public:
     Game(Engine2D::Engine& engine);
@@ -40,47 +52,25 @@ public:
 
 private:
     Engine2D::Engine& engine_;
-    Engine2D::Grid grid_;
+    Engine2D::Grid grid_{ {50.f, 80.f}, 20, 20, 35 };
+    Engine2D::GridMover grid_mover_{ {40.f, 2.f} };
     Engine2D::AssetLocator asset_locator_;
     Engine2D::TextureManager texture_manager_;
     Engine2D::FontManager font_manager_;
+    
+    std::size_t cursor_colrow_index_{0};
+    Engine2D::Coords_t cursor_coords_;
 
-    SDL_Texture* loadbar_texture_;
-    TTF_Font* font_;
+    SDL_Texture* texture_hand_default_ {nullptr};
+    SDL_Texture* texture_hand_click_ {nullptr};
+    SDL_Texture* texture_hand_drag_ {nullptr};
+    TTF_Font* font_text_ {nullptr};
+    TTF_Font* font_title_ {nullptr};
 
-    Engine2D::Timer pathfinder_timer_{0.2f};
-    //////////////// BFS ////////////////
-    /*Engine2D::Pathfinding::Pathfinder<
-        Engine2D::Grid,
-        Engine2D::Pathfinding::Frontier::BFSFrontier,
-        Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
-        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
-        grid_,
-        grid_.ColRowToIndex({3, 10}),
-        grid_.ColRowToIndex({15, 10})
-    };*/
+    EMouseUserAction user_action_{EMouseUserAction::NONE};
+    bool show_pathfinder_costs_ {false};
 
-    //////////////// Dijkstra ////////////////
-    /*Engine2D::Pathfinding::Pathfinder<
-        Engine2D::Grid,
-        Engine2D::Pathfinding::Frontier::DijkstraFrontier,
-        Engine2D::Pathfinding::Heuristic::ZeroHeuristic,
-        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
-        grid_,
-        grid_.ColRowToIndex({3, 10}),
-        grid_.ColRowToIndex({15, 10})
-    };*/
-
-    //////////////// A* Example - Star - Cross ////////////////
-    /*Engine2D::Pathfinding::Pathfinder<
-        Engine2D::Grid,
-        Engine2D::Pathfinding::Frontier::AStarFrontier,
-        Engine2D::Pathfinding::Heuristic::Euclidean,
-        Engine2D::Pathfinding::NeighbourProvider::StarProvider> pathfinder_{
-        grid_,
-        grid_.ColRowToIndex({3, 10}),
-        grid_.ColRowToIndex({15, 10})
-    };*/
+    Engine2D::Timer pathfinder_timer_{0.1f};
     Engine2D::Pathfinding::Pathfinder<
         Engine2D::Grid,
         Engine2D::Pathfinding::Frontier::AStarFrontier,
@@ -90,4 +80,21 @@ private:
         grid_.ColRowToIndex({3, 10}),
         grid_.ColRowToIndex({15, 10})
     };
+
+    struct KeyTextureDisplay {
+        std::string message;
+        SDL_Texture* texture;
+        SDL_FRect rect_dest;
+    };
+    std::array<KeyTextureDisplay, 5> key_texture_display_ {
+        KeyTextureDisplay{" Find Path", nullptr, {330.f, 38.f, 40.f, 40.f}}, //C
+        KeyTextureDisplay{" Single Step", nullptr, {90.f, 38.f, 40.f, 40.f}}, // S
+        KeyTextureDisplay{" Reset Path", nullptr, {90.f, 3.f, 40.f, 40.f}}, // R
+        KeyTextureDisplay{" Clean Blocks", nullptr, {565.f, 3.f, 40.f, 40.f}}, // W
+        KeyTextureDisplay{" Display Costs", nullptr, {565.f, 38.f, 40.f, 40.f}}, // D
+    };
+
+    void OnMouseDown();
+    void OnMouseMotion();
+    void OnKeyRelease(SDL_Scancode key_scancode);
 };
