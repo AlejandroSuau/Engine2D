@@ -46,9 +46,10 @@ void Engine::SetCursorDisplay(bool show) {
 void Engine::Run(std::unique_ptr<IGame> game) {
     is_running_ = true;
     game_ = std::move(game);
-    game_->Start();
 
     Init();
+
+    game_->Start();
     
     CoreLoop();
 }
