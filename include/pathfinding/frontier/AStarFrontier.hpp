@@ -11,15 +11,31 @@ namespace Engine2D::Pathfinding::Frontier
 {
 
 struct AStarFrontier {
-    using Item = std::tuple<NodeId_t, DistanceCost_t, DistanceCost_t, std::optional<NodeId_t>>; // (n, g, f, p)
-    struct Cmp { bool operator()(const Item& a, const Item& b) const {
-        return std::get<2>(a) > std::get<2>(b); // min-heap for f
-    }};
+    struct Item {
+        NodeId_t n;
+        DistanceCost_t g;
+        DistanceCost_t h;
+        std::optional<NodeId_t> p;
+        
+        DistanceCost_t f() const noexcept {
+            constexpr DistanceCost_t INF = std::numeric_limits<DistanceCost_t>::max();
+            return (h > INF - g) ? INF : (g + h);
+        }
+    };
+    struct Cmp {
+        bool operator()(const Item& a, const Item& b) const noexcept {
+            const auto fa = a.f();
+            const auto fb = b.f();
+            if (fa != fb) return fa > fb;    
+            if (a.h != b.h) return a.h > b.h;
+            return a.n > b.n;                
+        }
+    };
 
     std::priority_queue<Item, std::vector<Item>, Cmp> pq;
 
     void push(NodeId_t n, DistanceCost_t g, DistanceCost_t h_cost, std::optional<NodeId_t> p) {
-        pq.emplace(n, g, g + h_cost, p);
+        pq.emplace(n, g, h_cost, p);
     }
 
     bool empty() const {
@@ -27,9 +43,9 @@ struct AStarFrontier {
     }
 
     auto pop() { 
-        auto [n, g, /*f*/_, p] = pq.top();
+        const auto it = pq.top();
         pq.pop(); 
-        return std::tuple<NodeId_t, DistanceCost_t, std::optional<NodeId_t>>{n, g, p};
+        return std::tuple<NodeId_t, DistanceCost_t, std::optional<NodeId_t>>{it.n, it.g, it.p};
     }
 
     void clear() {

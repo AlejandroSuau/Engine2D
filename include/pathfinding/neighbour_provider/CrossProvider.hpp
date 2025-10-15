@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pathfinding/detail/StaticVec.hpp"
+#include "pathfinding/Pathfinder.hpp"
 #include "grid/Grid.hpp"
 #include "utils/Types.hpp"
 
@@ -16,7 +17,7 @@ struct CrossProvider {
         for (auto& opt : neighbours) {
             if (!opt) continue;
             
-            out.push_back({opt->index_, opt->cost_});
+            out.push_back({opt->index_, kBaseCostOrthogonal * opt->cost_});
         }
 
         return out;

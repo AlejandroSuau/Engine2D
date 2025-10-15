@@ -17,10 +17,14 @@ namespace Engine2D::Pathfinding {
 
 struct SearchBuffers {
     std::vector<bool>                    closed;
-    std::vector<DistanceCost_t>          g;     
+    std::vector<DistanceCost_t>          g;
+    std::vector<DistanceCost_t>          h;
+    std::vector<DistanceCost_t>          f;
     std::vector<std::optional<NodeId_t>> parent;
 };
 
+inline constexpr DistanceCost_t kBaseCostOrthogonal = 10;
+inline constexpr DistanceCost_t kBaseCostDiagonal = 14;
 inline constexpr DistanceCost_t kINF = std::numeric_limits<DistanceCost_t>::max();
 
 template<class G, class F, class H, class NeighbourProv>
@@ -65,13 +69,12 @@ public:
         for (auto [v, w] : neigh_(g_, u)) {
             if (g_u == kINF || w > (kINF - g_u)) continue;
 
-            const DistanceCost_t g_new = g_u + w;
+           const DistanceCost_t g_new = g_u + w;
             if (g_new < buf_.g[v]) {
                 buf_.g[v] = g_new;
-                if (buf_.closed[v]) {
-                    buf_.closed[v] = false;
-                }
+                buf_.f[v] = (buf_.h[v] > kINF - buf_.g[v]) ? kINF : (buf_.g[v] + buf_.h[v]);
 
+                if (buf_.closed[v]) { buf_.closed[v] = false; }
                 Push(v, u);
             }
         }
@@ -93,22 +96,39 @@ public:
         const auto N = g_.GetCellCount();
         if (buf_.g.size() == N) {
             std::fill(buf_.g.begin(), buf_.g.end(), kINF);
+            std::fill(buf_.h.begin(), buf_.h.end(), kINF);
+            std::fill(buf_.f.begin(), buf_.f.end(), kINF);
             std::fill(buf_.closed.begin(), buf_.closed.end(), false);
             std::fill(buf_.parent.begin(), buf_.parent.end(), std::nullopt);
         } else {
             buf_.g.assign(N, kINF);
+            buf_.h.assign(N, kINF);
+            buf_.f.assign(N, kINF);
             buf_.closed.assign(N, false);
             buf_.parent.assign(N, std::nullopt);
         }
 
-        step_count_ = 0;
+        for (NodeId_t n = 0; n < N; ++n) {
+            buf_.h[n] = heur_(g_, n, goal_);
+        }
+
         frontier_.clear();
-        buf_.g[start_] = 0;
+
+        buf_.g[start_] = DistanceCost_t{0};
+        buf_.f[start_] = (buf_.h[start_] > kINF - buf_.g[start_]) ? kINF : (buf_.g[start_] + buf_.h[start_]);
+        for (NodeId_t n = 0; n < N; ++n) {
+            if (n == start_) continue;
+            buf_.f[n] = kINF;
+        }
+
+        step_count_ = 0;
         Push(start_, std::nullopt);
     }
 
     [[nodiscard]] const Path& GetPath() const noexcept { return path_; }
     [[nodiscard]] const auto& GCosts() const noexcept { return buf_.g; }
+    [[nodiscard]] const auto& HCosts() const noexcept { return buf_.h; }
+    [[nodiscard]] const auto& FCosts() const noexcept { return buf_.f; }
     [[nodiscard]] const auto& Parents() const noexcept { return buf_.parent; }
     [[nodiscard]] const auto& Closed() const noexcept { return buf_.closed; }
     [[nodiscard]] NodeId_t GetStartIndex() const noexcept { return start_; }
@@ -130,8 +150,7 @@ private:
     int step_count_{0};
 
     void Push(NodeId_t n, std::optional<NodeId_t> parent) {
-        const DistanceCost_t h = heur_(g_, n, goal_);
-        frontier_.push(n, buf_.g[n], h, parent);
+        frontier_.push(n, buf_.g[n], buf_.h[n], parent);
     }
 
     bool FrontierEmpty() const {
