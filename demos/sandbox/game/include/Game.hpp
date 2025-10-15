@@ -52,7 +52,7 @@ public:
 
 private:
     Engine2D::Engine& engine_;
-    Engine2D::Grid grid_{ {50.f, 80.f}, 20, 20, 35 };
+    Engine2D::Grid grid_{ {50.f, 80.f}, 14, 14, 50 };
     Engine2D::GridMover grid_mover_{ {40.f, 2.f} };
     Engine2D::AssetLocator asset_locator_;
     Engine2D::TextureManager texture_manager_;
@@ -66,6 +66,8 @@ private:
     SDL_Texture* texture_hand_drag_ {nullptr};
     TTF_Font* font_text_ {nullptr};
     TTF_Font* font_title_ {nullptr};
+    TTF_Font* font_number_big_ {nullptr};
+    TTF_Font* font_number_small_ {nullptr};
 
     EMouseUserAction user_action_{EMouseUserAction::NONE};
     bool show_pathfinder_costs_ {false};
@@ -74,11 +76,11 @@ private:
     Engine2D::Pathfinding::Pathfinder<
         Engine2D::Grid,
         Engine2D::Pathfinding::Frontier::AStarFrontier,
-        Engine2D::Pathfinding::Heuristic::Euclidean,
-        Engine2D::Pathfinding::NeighbourProvider::CrossProvider> pathfinder_{
+        Engine2D::Pathfinding::Heuristic::Octile,
+        Engine2D::Pathfinding::NeighbourProvider::StarProvider> pathfinder_{
         grid_,
-        grid_.ColRowToIndex({3, 10}),
-        grid_.ColRowToIndex({15, 10})
+        grid_.ColRowToIndex({3, 7}),
+        grid_.ColRowToIndex({10, 7})
     };
 
     struct KeyTextureDisplay {

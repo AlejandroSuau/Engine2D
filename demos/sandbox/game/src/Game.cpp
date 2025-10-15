@@ -10,6 +10,8 @@ void Game::Start() {
     
     font_text_ = font_manager_.LoadFont("fonts/atari-full.ttf", 10, "attari-full-10");
     font_title_ = font_manager_.LoadFont("fonts/atari-full.ttf", 20, "attari-full-20");
+    font_number_small_ = font_manager_.LoadFont("fonts/atari-full.ttf", 8, "attari-full-8");
+    font_number_big_ = font_manager_.LoadFont("fonts/atari-full.ttf", 12, "attari-full-12");
 
     texture_hand_default_ = texture_manager_.LoadTexture("images/cursor_light/hand_default.png", "hand_default");
     texture_hand_click_ = texture_manager_.LoadTexture("images/cursor_light/hand_click.png", "hand_click");
@@ -104,14 +106,50 @@ void Game::Render(Engine2D::Renderer& renderer) {
         );
     }
 
-    const auto costs = pathfinder_.GCosts();
+    const auto& g_costs = pathfinder_.GCosts();
+    const auto& h_costs = pathfinder_.HCosts();
+    const auto& f_costs = pathfinder_.FCosts();
     if (show_pathfinder_costs_ && pathfinder_.GetStepCount() > 0) {
         for (const auto& c : cells) {
-            const auto cost = costs[c.index_];
-            if (cost != Engine2D::Pathfinding::kINF) {
-                renderer.RenderText(*font_text_, std::to_string(cost), {100, 200, 100, 255}, static_cast<Vec2<int>>(c.center_));
-            }
+            const auto g_cost = g_costs[c.index_];
+            if (g_cost == Engine2D::Pathfinding::kINF) continue;
+
+            auto pos = static_cast<Vec2<int>>(c.top_left_);
+            pos.y += 10;
+            pos.x += 10;
+            renderer.RenderText(
+                *font_number_small_,
+                std::to_string(g_cost),
+                {45, 45, 45, 255},
+                pos);
         } 
+        
+        for (const auto& c : cells) {
+            const auto h_cost = h_costs[c.index_];
+            if (g_costs[c.index_] == Engine2D::Pathfinding::kINF) continue;
+
+            auto pos = static_cast<Vec2<int>>(c.top_left_);
+            pos.y += 10;
+            pos.x += 40;
+            renderer.RenderText(
+                *font_number_small_,
+                std::to_string(h_cost),
+                {45, 45, 45, 255},
+                pos);
+        }
+        
+        for (const auto& c : cells) {
+            const auto f_cost = f_costs[c.index_];
+            if (g_costs[c.index_] == Engine2D::Pathfinding::kINF) continue;
+            
+            auto pos = static_cast<Vec2<int>>(c.center_);
+            pos.y += 10;
+            renderer.RenderText(
+                *font_number_big_,
+                std::to_string(f_cost),
+                {100, 200, 100, 255},
+                pos);
+        }
     }
 
     // Render cursor
@@ -216,6 +254,9 @@ void Game::OnKeyRelease(SDL_Scancode key_scancode) {
             pathfinder_timer_.Start();
         break;
         case SDL_SCANCODE_S:
+            if (pathfinder_.GetStepCount() == 0) {
+                pathfinder_.Reset();
+            }
             pathfinder_.Step();
         break;
         case SDL_SCANCODE_R:
