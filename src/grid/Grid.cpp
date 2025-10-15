@@ -12,14 +12,17 @@ const Grid::NeighboursCrossColRow_t Grid::kNeighbourOffsetCross {{
     {-1, 0}, // LEFT
 }};
 
+// Mandatory. First 4 are diagonals
+// Starprovider relies on this for diagonal base costs.
+// Reason: You don't have to ask if this pos is a diagonal. 4 first are.
 const Grid::NeighboursStarColRow_t Grid::kNeighboursOffsetStar {{
     {-1, -1}, // TOP-LEFT
-    { 0, -1}, // TOP
     { 1, -1}, // TOP-RIGHT
-    { 1,  0}, // RIGHT
     { 1,  1}, // BOTTOM-RIGHT
-    { 0,  1}, // BOTTOM
     {-1,  1}, // BOTTOM-LEFT
+    { 0, -1}, // TOP
+    { 1,  0}, // RIGHT
+    { 0,  1}, // BOTTOM
     {-1,  0}, // LEFT
 }};
 
