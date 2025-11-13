@@ -1,12 +1,12 @@
 #include "Game.hpp"
 
-Game::Game(Engine2D::Engine& engine) 
-    : engine_(engine)
-    , texture_manager_(*engine_.SDLRenderer(), asset_locator_)
+Game::Game(Engine2D::IEngineAPI& engine_api) 
+    : engine_api_(engine_api)
+    , texture_manager_(*engine_api_.GetSDLRenderer(), asset_locator_)
     , font_manager_(asset_locator_) {}
 
 void Game::Start() {
-    engine_.SetCursorDisplay(false);
+    engine_api_.SetCursorDisplay(false);
     
     font_text_ = font_manager_.LoadFont("fonts/atari-full.ttf", 10, "attari-full-10");
     font_title_ = font_manager_.LoadFont("fonts/atari-full.ttf", 20, "attari-full-20");

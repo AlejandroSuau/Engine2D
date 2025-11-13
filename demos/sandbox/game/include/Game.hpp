@@ -2,7 +2,7 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 
-#include "Engine2D.hpp"
+#include "IEngineAPI.hpp"
 #include "game/IGame.hpp"
 #include "renderer/Renderer.hpp"
 #include "grid/GridMover.hpp"
@@ -38,7 +38,7 @@ enum class EMouseUserAction {
 
 class Game : public Engine2D::IGame {
 public:
-    Game(Engine2D::Engine& engine);
+    Game(Engine2D::IEngineAPI& engine_api);
 
     void Start() override;
     void Update(float dt) override;
@@ -51,7 +51,7 @@ public:
     const Engine2D::Grid& GetGrid() const;
 
 private:
-    Engine2D::Engine& engine_;
+    Engine2D::IEngineAPI& engine_api_;
     Engine2D::Grid grid_{ {50.f, 80.f}, 14, 14, 50 };
     Engine2D::GridMover grid_mover_{ {40.f, 2.f} };
     Engine2D::AssetLocator asset_locator_;

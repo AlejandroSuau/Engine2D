@@ -11,20 +11,21 @@
 
 #include "game/IGame.hpp"
 
+#include "IEngineAPI.hpp"
+
 #include <memory>
 
 namespace Engine2D {
 
-class Engine {
+class Engine : public IEngineAPI {
 public:
     Engine();
     
     void Run(std::unique_ptr<IGame> game);
     void Shutdown();
 
-    SDL_Renderer* SDLRenderer();
-
-    void SetCursorDisplay(bool show);
+    SDL_Renderer* GetSDLRenderer() noexcept override;
+    void SetCursorDisplay(bool show) override;
 
 private:
     // SDL Initializers

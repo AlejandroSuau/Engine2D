@@ -122,7 +122,7 @@ void Engine::Shutdown() {
     is_running_ = false;
 }
 
-SDL_Renderer* Engine::SDLRenderer() {
+SDL_Renderer* Engine::GetSDLRenderer() noexcept {
     return sdl_renderer_.get();
 }
 
