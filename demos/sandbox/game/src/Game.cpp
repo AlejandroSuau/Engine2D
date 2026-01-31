@@ -8,174 +8,56 @@ Game::Game(Engine2D::IEngineAPI& engine_api)
 void Game::Start() {
     engine_api_.SetCursorDisplay(false);
     
-    font_text_ = font_manager_.LoadFont("fonts/atari-full.ttf", 10, "attari-full-10");
-    font_title_ = font_manager_.LoadFont("fonts/atari-full.ttf", 20, "attari-full-20");
-    font_number_small_ = font_manager_.LoadFont("fonts/atari-full.ttf", 8, "attari-full-8");
-    font_number_big_ = font_manager_.LoadFont("fonts/atari-full.ttf", 12, "attari-full-12");
+    auto& collision_world = engine_api_.GetCollisionWorld();  
+    /*collision_world.AddCollider(ball_one.collider);
+        Engine2D::Collider{
+            1, 
+            Engine2D::Circle{Vec2<float>{200.f, 0.f}, 20.f},
+            1, // layer
+            1 // mask
+        } */
+    ball_one.collider_id = collision_world.AddCollider({
+        static_cast<std::uint32_t>(-1),
+        Engine2D::Circle{Vec2<float>{200.f, 0.f}, 20.f},
+        1, // layer
+        1 // mask
+    });
 
-    texture_hand_default_ = texture_manager_.LoadTexture("images/cursor_light/hand_default.png", "hand_default");
-    texture_hand_click_ = texture_manager_.LoadTexture("images/cursor_light/hand_click.png", "hand_click");
-    texture_hand_drag_ = texture_manager_.LoadTexture("images/cursor_light/hand_drag.png", "hand_drag");
+    ball_two.collider_id = collision_world.AddCollider({ 
+        static_cast<std::uint32_t>(-1),
+        Engine2D::Circle{Vec2<float>{215.f, 0.f}, 20.f},
+            1, // layer
+            1 // mask
+    });
 
-    key_texture_display_[0].texture = texture_manager_.LoadTexture("images/keys_light/C.png", "keys-C");
-    key_texture_display_[1].texture = texture_manager_.LoadTexture("images/keys_light/S.png", "keys-S");
-    key_texture_display_[2].texture = texture_manager_.LoadTexture("images/keys_light/R.png", "keys-R");
-    key_texture_display_[3].texture = texture_manager_.LoadTexture("images/keys_light/W.png", "keys-W");
-    key_texture_display_[4].texture = texture_manager_.LoadTexture("images/keys_light/D.png", "keys-D");
+    collision_world.AddListener(this);
 }
 
 void Game::Update(float dt) {
-    if (pathfinder_timer_.Update(dt)) {
-        pathfinder_.Step();
-    }
+    ball_one.is_colliding = false;
+    ball_two.is_colliding = false;
+
+    ball_one.center.y += ball_one.velocity * dt;
+    engine_api_.GetCollisionWorld().GetCollider(ball_one.collider_id).SetCenterPosition(ball_one.center);
+    
+    ball_two.center.y += ball_two.velocity * dt;
+    engine_api_.GetCollisionWorld().GetCollider(ball_two.collider_id).SetCenterPosition(ball_two.center);
 }
 
 void Game::Render(Engine2D::Renderer& renderer) {  
-    const auto& cells = grid_.Cells();
-    const auto cell_dimensions = static_cast<float>(grid_.GetCellDimensions());
 
-    renderer.SetRenderingColor({240, 243, 249, 255});
-    renderer.RenderRectFilled({
-        0.f, 0.f, static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())});
-
-    // Render title
-    renderer.RenderText(*font_title_, "<Pathfinder>", {41, 128, 185, 255}, {400, 15}, true);  
-    static const float key_dimensions = 30.f;
-    for (const auto& key_texture : key_texture_display_) {
-        renderer.RenderTexture(
-            key_texture.texture, 
-            {0, 0, 19, 21},
-            {key_texture.rect_dest.x, key_texture.rect_dest.y, key_dimensions, key_dimensions});
-        
-        const Vec2<int> text_dest {
-            static_cast<int>(key_texture.rect_dest.x + key_dimensions),
-            static_cast<int>(key_texture.rect_dest.y + 10.f)};
-        renderer.RenderText(*font_text_, key_texture.message, {60, 70, 80, 230}, text_dest, false);      
+    // TODO: REMOVE - Render CIRCLE
+    if (ball_one.is_colliding) {
+        renderer.SetRenderingColor({255, 0, 0, 255});
+    } else {
+        renderer.SetRenderingColor({0, 255, 0, 255});
     }
+    
+    //renderer.DrawCircleOutline(ball_one.center, ball_one.radius);
+    renderer.DrawCircleOutline(ball_one.center, ball_one.radius);
 
-    // Obstacles
-    renderer.SetRenderingColor({44, 62, 80, 255});
-    for (const auto c : grid_.Cells()) {
-        if (c.is_walkable_) continue;
-
-        renderer.RenderRectFilled(
-            {c.top_left_.x, c.top_left_.y, cell_dimensions, cell_dimensions}
-        );
-    }
-
-    // Render Path Visited
-    renderer.SetRenderingColor({52, 152, 219, 90});
-    const auto& path_closed = pathfinder_.Closed();
-    for (const auto& c : cells) {
-        if (!path_closed[c.index_]) continue;
-
-        renderer.RenderRectFilled(
-            {c.top_left_.x, c.top_left_.y, cell_dimensions, cell_dimensions}
-        );
-    }
-
-    // Path
-    renderer.SetRenderingColor({241, 196, 15, 215});
-    const auto& path = pathfinder_.GetPath();
-    for (const auto cell_index : path) {
-        const auto c = cells[cell_index];
-        renderer.RenderRectFilled(
-            {c.top_left_.x, c.top_left_.y, cell_dimensions, cell_dimensions}
-        );
-    }
-
-    // From
-    renderer.SetRenderingColor({46, 204, 113, 255});
-    const auto from = grid_.ColRowToCoords(grid_.IndexToColRow(pathfinder_.GetStartIndex()));
-    renderer.RenderRectFilled(
-        {static_cast<float>(from.x), static_cast<float>(from.y), cell_dimensions, cell_dimensions}
-    );
-
-    // To
-    renderer.SetRenderingColor({231, 76, 60, 255});
-    const auto to = grid_.ColRowToCoords(grid_.IndexToColRow(pathfinder_.GetGoalIndex()));
-    renderer.RenderRectFilled(
-        {static_cast<float>(to.x), static_cast<float>(to.y), cell_dimensions, cell_dimensions}
-    );
-
-    // Render Grid
-    renderer.SetRenderingColor({200, 210, 220, 255});
-    for (const auto& c : cells) {
-        renderer.RenderRect(
-            {c.top_left_.x, c.top_left_.y, cell_dimensions, cell_dimensions}
-        );
-    }
-
-    const auto& g_costs = pathfinder_.GCosts();
-    const auto& h_costs = pathfinder_.HCosts();
-    const auto& f_costs = pathfinder_.FCosts();
-    if (show_pathfinder_costs_ && pathfinder_.GetStepCount() > 0) {
-        for (const auto& c : cells) {
-            const auto g_cost = g_costs[c.index_];
-            if (g_cost == Engine2D::Pathfinding::kINF) continue;
-
-            auto pos = static_cast<Vec2<int>>(c.top_left_);
-            pos.y += 10;
-            pos.x += 10;
-            renderer.RenderText(
-                *font_number_small_,
-                std::to_string(g_cost),
-                {45, 45, 45, 255},
-                pos);
-        } 
-        
-        for (const auto& c : cells) {
-            const auto h_cost = h_costs[c.index_];
-            if (g_costs[c.index_] == Engine2D::Pathfinding::kINF) continue;
-
-            auto pos = static_cast<Vec2<int>>(c.top_left_);
-            pos.y += 10;
-            pos.x += 40;
-            renderer.RenderText(
-                *font_number_small_,
-                std::to_string(h_cost),
-                {45, 45, 45, 255},
-                pos);
-        }
-        
-        for (const auto& c : cells) {
-            const auto f_cost = f_costs[c.index_];
-            if (g_costs[c.index_] == Engine2D::Pathfinding::kINF) continue;
-            
-            auto pos = static_cast<Vec2<int>>(c.center_);
-            pos.y += 10;
-            renderer.RenderText(
-                *font_number_big_,
-                std::to_string(f_cost),
-                {100, 200, 100, 255},
-                pos);
-        }
-    }
-
-    // Render cursor
-    static const float cursor_dimensions = 30.f;
-    switch(user_action_) {
-        case EMouseUserAction::MOVING_START_NODE:
-        case EMouseUserAction::MOVING_GOAL_NODE:
-            renderer.RenderTexture(
-                texture_hand_drag_,
-                {0, 0, 51, 51},
-                {cursor_coords_.x - 5.f, cursor_coords_.y, cursor_dimensions, cursor_dimensions});
-        break;
-        case EMouseUserAction::DRAWING_BLOCKS:
-        case EMouseUserAction::UNDRAWING_BLOCKS:
-            renderer.RenderTexture(
-                texture_hand_click_,
-                {0, 0, 48, 45},
-                {cursor_coords_.x, cursor_coords_.y, cursor_dimensions, cursor_dimensions});
-        break;
-        default:
-            renderer.RenderTexture(
-                texture_hand_default_, 
-                {0, 0, 51, 63},
-                {cursor_coords_.x - 5.f, cursor_coords_.y, cursor_dimensions, cursor_dimensions});
-        break;
-    }
+    //renderer.DrawCircleOutline(ball_two.center, ball_two.radius);
+    renderer.DrawCircleOutline(ball_two.center, ball_two.radius);
 }
 
 const Engine2D::Grid& Game::GetGrid() const {
@@ -189,18 +71,6 @@ void Game::HandleEvent(const SDL_Event& event) {
     if (is_mouse_down || is_mouse_up || is_mouse_motion) {
         cursor_coords_.x = static_cast<float>(event.button.x);
         cursor_coords_.y = static_cast<float>(event.button.y);
-        if (!grid_.AreCoordsInsideBoundaries(cursor_coords_)) return;
-
-        const auto colrow = grid_.CoordsToColRow(cursor_coords_);
-        cursor_colrow_index_ = grid_.ColRowToIndex(colrow);
-
-        if (is_mouse_down) {
-            OnMouseDown();
-        } else if (is_mouse_motion) {
-            OnMouseMotion();
-        } else if (is_mouse_up) {
-            user_action_ = EMouseUserAction::NONE;
-        }
     }
 
     if (event.type == SDL_KEYUP) {
@@ -209,42 +79,11 @@ void Game::HandleEvent(const SDL_Event& event) {
 }
 
 void Game::OnMouseDown() {
-    if (cursor_colrow_index_ == pathfinder_.GetStartIndex()) {
-        user_action_ = EMouseUserAction::MOVING_START_NODE;
-    } else if (cursor_colrow_index_ == pathfinder_.GetGoalIndex()) {
-        user_action_ = EMouseUserAction::MOVING_GOAL_NODE;
-    } else if (grid_.IsWalkable(cursor_colrow_index_)) {
-        user_action_ = EMouseUserAction::DRAWING_BLOCKS;
-        grid_.SetIsWalkable(cursor_colrow_index_, false);
-    } else {
-        user_action_ = EMouseUserAction::UNDRAWING_BLOCKS;
-        grid_.SetIsWalkable(cursor_colrow_index_, true);
-    }
+
 }
 
 void Game::OnMouseMotion() {
-    const auto is_walkable = grid_.IsWalkable(cursor_colrow_index_);
-                                   
-    switch(user_action_) {
-        case EMouseUserAction::MOVING_START_NODE:
-            if (!is_walkable || cursor_colrow_index_ == pathfinder_.GetStartIndex())
-                return;
-            
-            pathfinder_.SetStartIndex(cursor_colrow_index_);
-        break;
-        case EMouseUserAction::MOVING_GOAL_NODE:
-            if (!is_walkable || cursor_colrow_index_ == pathfinder_.GetGoalIndex())
-                return;
 
-            pathfinder_.SetGoalIndex(cursor_colrow_index_);
-        break;
-        case EMouseUserAction::UNDRAWING_BLOCKS:
-            grid_.SetIsWalkable(cursor_colrow_index_, true);
-        break;
-        case EMouseUserAction::DRAWING_BLOCKS:
-            grid_.SetIsWalkable(cursor_colrow_index_, false);
-        break;
-    }
 }
 
 void Game::OnKeyRelease(SDL_Scancode key_scancode) {
@@ -275,3 +114,13 @@ void Game::OnKeyRelease(SDL_Scancode key_scancode) {
 std::string Game::GetWindowTitle() { return "Pathfinder Demo"; }
 int Game::GetScreenWidth() { return 800; }
 int Game::GetScreenHeight() { return 800; }
+
+void Game::OnCollision(const Engine2D::CollisionEvent& e) {
+    //const auto col_pos_1 = ball_one.collider.GetCenterPosition();
+   // SDL_Log("## Ball One ## Collider Pos: (%f.2, %f.2); Radius: (%f.2)", col_pos_1.x, col_pos_1.y, ball_one.radius);
+    ball_one.is_colliding = true;
+
+    //const auto col_pos_2 = ball_two.collider.GetCenterPosition();
+    //SDL_Log("## Ball Two ## Collider Pos: (%f.2, %f.2); Radius: (%f.2)", col_pos_2.x, col_pos_2.y, ball_two.radius);
+    ball_two.is_colliding = true;
+}

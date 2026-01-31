@@ -4,12 +4,16 @@
 
 namespace Engine2D {
 
+class CollisionWorld;
+
 class IEngineAPI {
 public:
     virtual ~IEngineAPI() = default;
 
     virtual SDL_Renderer* GetSDLRenderer() noexcept = 0;
     virtual void SetCursorDisplay(bool show) = 0;
+
+    virtual CollisionWorld& GetCollisionWorld() noexcept = 0;
 };
 
 }

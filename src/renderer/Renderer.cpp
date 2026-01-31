@@ -60,4 +60,28 @@ void Renderer::RenderLine(Vec2<float> point_from, Vec2<float> point_to) {
     SDL_RenderDrawLineF(renderer_, point_from.x, point_from.y, point_to.x, point_to.y);
 }
 
+void Renderer::DrawCircleOutline(Vec2<float> center, float radius) {
+    float x = radius;
+    float y = 0;
+    float err = 1.f - x;
+    while (x >= y) {
+        SDL_RenderDrawPointF(renderer_, center.x + x, center.y + y);
+        SDL_RenderDrawPointF(renderer_, center.x + y, center.y + x);
+        SDL_RenderDrawPointF(renderer_, center.x - y, center.y + x);
+        SDL_RenderDrawPointF(renderer_, center.x - x, center.y + y);
+        SDL_RenderDrawPointF(renderer_, center.x - x, center.y - y);
+        SDL_RenderDrawPointF(renderer_, center.x - y, center.y - x);
+        SDL_RenderDrawPointF(renderer_, center.x + y, center.y - x);
+        SDL_RenderDrawPointF(renderer_, center.x + x, center.y - y);
+
+        y++;
+        if (err < 0) {
+            err += 2.f * y + 1.f;
+        } else {
+            x--;
+            err += 2.f * (y - x) + 1.f;
+        }
+    }
+}
+
 }

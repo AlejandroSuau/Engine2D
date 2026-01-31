@@ -25,9 +25,6 @@
 #include "pathfinding/heuristic/Chebyshev.hpp"
 #include "pathfinding/heuristic/Zero.hpp"
 
-#include "collision/CollisionWorld.hpp"
-#include "collision/ICollisionListener.hpp"
-
 #include <string>
 #include <array>
 
@@ -39,12 +36,7 @@ enum class EMouseUserAction {
     NONE
 };
 
-namespace CollisionLayer {
-constexpr std::uint32_t Circle = 1u << 0; // mask 1 (for colliding with circle)
-constexpr std::uint32_t Square = 1u << 1; // mask 2 (for colliding with squares)
-}
-
-class Game : public Engine2D::IGame, public Engine2D::ICollisionListener {
+class Game : public Engine2D::IGame {
 public:
     Game(Engine2D::IEngineAPI& engine_api);
 
@@ -107,24 +99,4 @@ private:
     void OnMouseDown();
     void OnMouseMotion();
     void OnKeyRelease(SDL_Scancode key_scancode);
-
-    // Collision example
-    struct Ball {
-        bool is_colliding;
-        std::uint32_t id;
-        Vec2<float> center;
-        float radius;
-        float velocity;
-        SDL_Color color;
-        Engine2D::CollisionWorld::ColliderID collider_id;
-    };
-
-    Ball ball_one {
-        false, 1, Vec2<float>{200.f, 0.f}, 20.f, 40.f, SDL_Color{0, 255, 0, 255}, 0
-    };
-    Ball ball_two {
-        false, 2, Vec2<float>{215.f, 0.f}, 15.f, 55.f, SDL_Color{0, 255, 0, 255}, 0
-    };
-
-    void OnCollision(const Engine2D::CollisionEvent& e) override;
 };

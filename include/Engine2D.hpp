@@ -8,6 +8,7 @@
 #include "sdl_initializer/SDLMixerInitializer.hpp"
 
 #include "renderer/Renderer.hpp"
+#include "collision/CollisionWorld.hpp"
 
 #include "game/IGame.hpp"
 
@@ -26,6 +27,7 @@ public:
 
     SDL_Renderer* GetSDLRenderer() noexcept override;
     void SetCursorDisplay(bool show) override;
+    CollisionWorld& GetCollisionWorld() noexcept override;
 
 private:
     // SDL Initializers
@@ -41,6 +43,8 @@ private:
 
     std::unique_ptr<Renderer> renderer_;
 
+    CollisionWorld collision_world_;
+
     // Game
     std::unique_ptr<IGame> game_;
 
@@ -50,6 +54,9 @@ private:
     void Update(float dt);
     void Render();
     void HandleEvents();
+
+    void RegisterCollisionListener(ICollisionListener* listener);
+    void UnregisterCollisionListener(ICollisionListener* listener);
 };
 
 }

@@ -80,6 +80,8 @@ void Engine::CoreLoop() {
             accumulated_time -= kFixedTimeStep;
         }
 
+        collision_world_.CheckCollisionsAndDispatch();
+
         Render();
 
         Uint64 frame_end = SDL_GetTicks64();
@@ -124,6 +126,18 @@ void Engine::Shutdown() {
 
 SDL_Renderer* Engine::GetSDLRenderer() noexcept {
     return sdl_renderer_.get();
+}
+
+CollisionWorld& Engine::GetCollisionWorld() noexcept {
+    return collision_world_;
+}
+
+void Engine::RegisterCollisionListener(ICollisionListener* listener) {
+    collision_world_.AddListener(listener);
+}
+
+void Engine::UnregisterCollisionListener(ICollisionListener* listener) {
+    collision_world_.RemoveListener(listener);
 }
 
 }
