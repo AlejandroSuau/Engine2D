@@ -9,3 +9,6 @@ cmake --build . --target Sandbox -j
 cmake --build . --target PathfindingShowcase -j
 .\demos\pathfinding-showcase\Debug\PathfindingShowcase.exe
 
+cmake --build . --target DemoSceneShowcase -j
+.\demos\demoscene\Debug\DemoSceneShowcase.exe
+
