@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(Engine2D VERSION 0.1 LANGUAGES CXX)
+project(Engine2D VERSION 0.1 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,6 +11,10 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 include(FetchContent)
+
+set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
+set(GLAD_DIR "${THIRD_PARTY_DIR}/glad")
+set(GLM_DIR "${THIRD_PARTY_DIR}/glm")
 
 # ================= SDL2 & deps =================
 FetchContent_Declare(
@@ -50,16 +54,29 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# ================= GLAD =================
+add_library(glad STATIC
+    ${GLAD_DIR}/src/glad.c
+)
+
+target_include_directories(glad PUBLIC
+    ${GLAD_DIR}/include
+)
+
 # ================= Engine2D library =================
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 file(GLOB_RECURSE ENGINE2D_SOURCES ${SOURCE_DIR}/*.cpp)
 
 add_library(Engine2D STATIC ${ENGINE2D_SOURCES})
 
-target_include_directories(Engine2D PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(Engine2D PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+    ${GLM_DIR}
+)
 
 target_link_libraries(Engine2D
     PUBLIC
+    glad
     SDL2::SDL2
     SDL2_image::SDL2_image
     SDL2_mixer::SDL2_mixer
@@ -68,10 +85,9 @@ target_link_libraries(Engine2D
 )
 
 if (WIN32)
-    target_link_libraries(Engine2D PUBLIC SDL2::SDL2main)
+    target_link_libraries(Engine2D PUBLIC SDL2::SDL2main opengl32)
 endif()
 
-# macOS frameworks
 if (APPLE)
     target_link_libraries(Engine2D PUBLIC
         "-framework Cocoa"
@@ -87,34 +103,10 @@ if (APPLE)
         "-framework ForceFeedback"
         "-framework CoreHaptics"
         "-framework Carbon"
+        "-framework OpenGL"
     )
 endif()
 
 if (ENGINE2D_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
-
-# ================= Example game (optional) =================
-# add_executable(GameSandbox main.cpp)
-# target_link_libraries(GameSandbox PRIVATE Engine2D)
-
-# ================= Assets copy =================
-# set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-# set(ASSETS_DEST_DIR "${CMAKE_BINARY_DIR}/assets")
-# add_custom_command(
-#     TARGET GameSandbox POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#     ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
-# )
-# if (WIN32)
-#     add_custom_command(TARGET GameSandbox POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#             $<TARGET_FILE:SDL2::SDL2>
-#             $<TARGET_FILE:SDL2::SDL2main>
-#             $<TARGET_FILE:SDL2_image::SDL2_image>
-#             $<TARGET_FILE:SDL2_mixer::SDL2_mixer>
-#             $<TARGET_FILE:SDL2_ttf::SDL2_ttf>
-#         $<TARGET_FILE_DIR:GameSandbox>
-#     )
-# endif()
-
