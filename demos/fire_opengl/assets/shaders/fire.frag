@@ -47,14 +47,16 @@ void main() {
     float n = fbm(vec2(uv.x * 3.0, uv.y * 4.0 - uTime * 2.0));
 
     // Movimiento lateral, más fuerte arriba
-    x += sin(uTime * 2.5 + y * 8.0) * 0.04 * y;
-    x += (n - 0.5) * 0.12 * y;
+    //x += sin(uTime * 2.5 + y * 8.0) * 0.04 * y;
+    x += (n - 0.5) * 0.22 * y;
+    x += sin(y * 18.0 + uTime * 7.0) * 0.025 * y;
 
     // Ancha abajo, estrecha arriba
     float width = mix(0.34, 0.03, y);
 
     // Romper borde de la llama
-    width += (n - 0.5) * 0.12;
+    width += (n - 0.5) * 0.22 * y;
+    width += sin(y * 22.0 + uTime * 6.0) * 0.015 * y;
 
     float d = abs(x);
 

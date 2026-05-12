@@ -10,34 +10,63 @@ uniform vec2 uResolution;
 void main() {
     vec2 uv = vUV;
 
-    float distX = abs(uv.x - 0.5);
+    // Centro del fuego en pantalla
+    vec2 fireCenter = vec2(0.5, 0.22);
 
-    // El calor ocupa más zona que la llama
-    float heatWidth = mix(0.34, 0.10, uv.y);
+    // Distancia al eje vertical del fuego
+    float distX = abs(uv.x - fireCenter.x);
 
-    float mask = 1.0 - smoothstep(heatWidth - 0.035, heatWidth, distX);
+    // El calor es más ancho abajo y más fino arriba
+    float heatWidth = mix(0.30, 0.11, uv.y);
 
-    // Que se note más en la zona media-alta
-    float verticalFactor =
-        smoothstep(0.08, 0.22, uv.y) *
-        (1.0 - smoothstep(0.93, 1.0, uv.y));
+    float horizontalMask =
+        1.0 - smoothstep(heatWidth * 0.65, heatWidth, distX);
 
-    float turbulence1 = sin(uTime * 2.8 + uv.y * 16.0) * 0.010;
-    float turbulence2 = sin(uTime * 5.2 + uv.y * 31.0) * 0.006;
-    float turbulence3 = sin(uTime * 7.0 + uv.y * 52.0) * 0.003;
+    // Solo queremos calor por encima de la base
+    float verticalMask =
+        smoothstep(0.12, 0.30, uv.y) *
+        (1.0 - smoothstep(0.90, 1.0, uv.y));
 
-    float offsetX = (turbulence1 + turbulence2 + turbulence3) * mask * verticalFactor;
-    float offsetY = (turbulence2 * 0.35) * mask * verticalFactor;
+    // Más fuerte cerca del fuego
+    float distanceToFire = distance(uv, fireCenter);
 
-    vec2 screenUV = gl_FragCoord.xy / uResolution;
-    screenUV += vec2(offsetX, offsetY);
+    float radialMask =
+        1.0 - smoothstep(0.05, 0.65, distanceToFire);
 
-    // Evita glitches de borde
-    screenUV = clamp(screenUV, vec2(0.001), vec2(0.999));
+    float mask =
+        horizontalMask * verticalMask * radialMask;
 
-    vec4 sceneColor = texture(uSceneTexture, screenUV);
+    // Ondas ascendentes
+    float wave1 =
+        sin(uv.y * 45.0 - uTime * 8.0 + uv.x * 9.0);
 
-    float alpha = mask * verticalFactor * 0.42;
+    float wave2 =
+        sin(uv.y * 80.0 - uTime * 13.0);
 
-    FragColor = vec4(sceneColor.rgb, 1.0);
+    float wave3 =
+        sin((uv.x + uv.y) * 35.0 + uTime * 5.0);
+
+    float distortion =
+        wave1 * 0.006 +
+        wave2 * 0.003 +
+        wave3 * 0.002;
+
+    distortion *= mask;
+
+    vec2 screenUV =
+        gl_FragCoord.xy / uResolution;
+
+    screenUV.x += distortion;
+
+    // Pequeño desplazamiento vertical para que no sea solo izquierda/derecha
+    screenUV.y += wave2 * 0.0015 * mask;
+
+    screenUV =
+        clamp(screenUV, vec2(0.001), vec2(0.999));
+
+    vec3 sceneColor =
+        texture(uSceneTexture, screenUV).rgb;
+
+    FragColor =
+        vec4(sceneColor, 1.0);
 }
