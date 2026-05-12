@@ -48,7 +48,7 @@ void main() {
 
     // Movimiento lateral, más fuerte arriba
     //x += sin(uTime * 2.5 + y * 8.0) * 0.04 * y;
-    x += (n - 0.5) * 0.22 * y;
+    x += (n - 0.5) * 0.16 * y;
     x += sin(y * 18.0 + uTime * 7.0) * 0.025 * y;
 
     // Ancha abajo, estrecha arriba
@@ -90,9 +90,24 @@ void main() {
     glow *= 1.0 - smoothstep(0.65, 1.0, y);
 
     vec3 glowColor = vec3(1.0, 0.25, 0.03) * glow * 0.5;
-
+    
     float alpha = flame + glow * 0.25;
     alpha *= 0.90 + 0.10 * sin(uTime * 10.0 + n * 8.0);
+
+    // Recorte de seguridad para que no aparezcan trozos sueltos
+    float safeArea =
+        smoothstep(0.05, 0.14, uv.x) *
+        (1.0 - smoothstep(0.86, 0.95, uv.x)) *
+        smoothstep(0.02, 0.10, uv.y) *
+        (1.0 - smoothstep(0.88, 0.98, uv.y));
+
+    alpha *= safeArea;
+    flame *= safeArea;
+    glow *= safeArea;
+
+    if (alpha < 0.03) {
+        discard;
+    }
 
     FragColor = vec4(color * flame + glowColor, alpha);
 }

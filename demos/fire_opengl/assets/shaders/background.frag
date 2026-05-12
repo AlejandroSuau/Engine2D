@@ -44,8 +44,7 @@ void main() {
         (n - 0.5) * 0.035;
 
     // Líneas horizontales de pared/ladrillos
-    float lineWave =
-        sin((uv.y + n * 0.015) * 55.0);
+    float lineWave = sin(uv.y * 55.0);
 
     float lineMask =
         smoothstep(0.91, 1.0, lineWave);
@@ -54,8 +53,7 @@ void main() {
         lineMask * vec3(0.09, 0.055, 0.032);
 
     // Pequeñas divisiones verticales muy suaves
-    float verticalLines =
-        sin((uv.x + n * 0.02) * 22.0);
+    float verticalLines = sin(uv.x * 22.0);
 
     float verticalMask =
         smoothstep(0.996, 1.0, verticalLines);

@@ -46,20 +46,20 @@ void main() {
     float wave3 =
         sin((uv.x + uv.y) * 35.0 + uTime * 5.0);
 
-    float distortion =
-        wave1 * 0.006 +
-        wave2 * 0.003 +
-        wave3 * 0.002;
+float distortionX =
+    wave1 * 0.003 +
+    wave2 * 0.0015 +
+    wave3 * 0.001;
 
-    distortion *= mask;
+float distortionY =
+    wave1 * 0.002 +
+    wave2 * 0.0025;
 
     vec2 screenUV =
         gl_FragCoord.xy / uResolution;
 
-    screenUV.x += distortion;
-
-    // Pequeño desplazamiento vertical para que no sea solo izquierda/derecha
-    screenUV.y += wave2 * 0.0015 * mask;
+screenUV.x += distortionX * mask;
+screenUV.y += distortionY * mask;
 
     screenUV =
         clamp(screenUV, vec2(0.001), vec2(0.999));
