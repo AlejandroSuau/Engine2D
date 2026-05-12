@@ -1,6 +1,8 @@
 # Librería con la lógica del juego (para compilar rápido y poder testear)
 add_library(FireOpenGLShowcaseCore STATIC
     game/src/Game.cpp
+    game/src/FireOpenGL.cpp
+    game/src/Shader.cpp
 )
 
 target_include_directories(FireOpenGLShowcaseCore
