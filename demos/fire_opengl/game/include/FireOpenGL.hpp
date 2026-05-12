@@ -7,6 +7,8 @@
 #include "Constants.hpp"
 #include "Shader.hpp"
 
+#include <memory>
+
 class FireOpenGL {
 public:
     FireOpenGL(int window_width, int window_height);
@@ -47,6 +49,7 @@ private:
     void CoreLoop();
     void Update(float dt);
     void Render();
+    void RenderBackgroundQuad();
     void RenderHeatQuad();
     void RenderFireQuad(float offset_x, float scale);
     void RenderBaseQuad(float offset_x, float offset_y, float scale_x, float scale_y);

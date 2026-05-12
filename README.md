@@ -12,3 +12,5 @@ cmake --build . --target PathfindingShowcase -j
 cmake --build . --target DemoSceneShowcase -j
 .\demos\demoscene\Debug\DemoSceneShowcase.exe
 
+cmake --build . --target FireOpenGLShowcase -j
+.\demos\fire_opengl\Debug\FireOpenGLShowcase.exe
