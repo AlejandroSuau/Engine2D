@@ -62,8 +62,7 @@ void main() {
         verticalMask * vec3(0.015, 0.010, 0.008);
 
     // Posición aproximada del fuego
-    vec2 firePos =
-        vec2(0.5, 0.20);
+    vec2 firePos = vec2(0.5, 0.32);
 
     float dist =
         distance(uv, firePos);

@@ -51,17 +51,76 @@ void main() {
     x += (n - 0.5) * 0.16 * y;
     x += sin(y * 18.0 + uTime * 7.0) * 0.025 * y;
 
-    // Ancha abajo, estrecha arriba
-    float width = mix(0.34, 0.03, y);
+    // ===============================
+    // Forma tipo hoguera
+    // ===============================
 
-    // Romper borde de la llama
-    width += (n - 0.5) * 0.22 * y;
-    width += sin(y * 22.0 + uTime * 6.0) * 0.015 * y;
+    // Ancha abajo, pero no termina tan fina arriba
+    float baseWidth = mix(0.52, 0.12, y);
 
-    float d = abs(x);
+    // Varias lenguas de fuego
+    float tongue1 = sin(y * 10.0 - uTime * 3.0) * 0.10;
+    float tongue2 = sin(y * 15.0 + uTime * 4.0) * 0.07;
+    float tongue3 = sin(y * 23.0 - uTime * 5.5) * 0.04;
 
-    // Forma principal
-    float flame = 1.0 - smoothstep(width * 0.65, width, d);
+    // Centro ondulante
+    float centerOffset =
+        tongue1 * 0.35 +
+        tongue2 * 0.25 +
+        tongue3 * 0.20;
+
+    centerOffset *= y;
+
+    // Tres centros de llama
+    float dCenter = abs(x - centerOffset);
+float dLeft   = abs(x + 0.15 + centerOffset * 0.35);
+float dRight  = abs(x - 0.15 + centerOffset * 0.30);
+
+    // Anchuras diferentes
+float mainWidth  = baseWidth * 0.90;
+float leftWidth  = baseWidth * 0.78;
+float rightWidth = baseWidth * 0.75;
+
+    // Alturas diferentes
+    float mainFlame =
+        1.0 - smoothstep(mainWidth * 0.55, mainWidth, dCenter);
+
+    mainFlame *=
+        1.0 - smoothstep(0.78, 1.0, y);
+
+    float leftFlame =
+        1.0 - smoothstep(leftWidth * 0.30, leftWidth, dLeft);
+
+    leftFlame *=
+        1.0 - smoothstep(0.52, 0.82, y);
+
+    float rightFlame =
+        1.0 - smoothstep(rightWidth * 0.30, rightWidth, dRight);
+
+    rightFlame *=
+        1.0 - smoothstep(0.45, 0.75, y);
+
+    // Combinar lenguas
+    float flame =
+        max(mainFlame, max(leftFlame, rightFlame));
+
+        // Une visualmente las lenguas para que no parezcan tres columnas separadas
+float body =
+    1.0 - smoothstep(baseWidth * 0.45, baseWidth * 1.05, abs(x));
+
+body *= 1.0 - smoothstep(0.58, 0.92, y);
+
+flame = max(flame, body * 0.65);
+
+    // Nace suavemente desde abajo
+    flame *= smoothstep(0.00, 0.06, y);
+
+    // Ruido para romper silueta
+    flame *= smoothstep(0.15, 0.95, n + flame * 0.45);
+
+    // Para que siga habiendo una variable d compatible con el resto del shader
+    float d = dCenter;
+    float width = baseWidth;
 
     // Nace suavemente en la base
     flame *= smoothstep(0.02, 0.16, y);
@@ -70,9 +129,31 @@ void main() {
     flame *= 1.0 - smoothstep(0.75, 1.0, y);
 
     // Núcleo interior
-    float coreWidth = width * 0.38;
-    float core = 1.0 - smoothstep(coreWidth * 0.5, coreWidth, d);
-    core *= 1.0 - smoothstep(0.45, 0.85, y);
+// Núcleos interiores para cada lengua de fuego
+float mainCoreWidth  = mainWidth  * 0.34;
+float leftCoreWidth  = leftWidth  * 0.32;
+float rightCoreWidth = rightWidth * 0.32;
+
+float mainCore =
+    1.0 - smoothstep(mainCoreWidth * 0.45, mainCoreWidth, dCenter);
+
+mainCore *=
+    1.0 - smoothstep(0.45, 0.82, y);
+
+float leftCore =
+    1.0 - smoothstep(leftCoreWidth * 0.45, leftCoreWidth, dLeft);
+
+leftCore *=
+    1.0 - smoothstep(0.24, 0.56, y);
+
+float rightCore =
+    1.0 - smoothstep(rightCoreWidth * 0.45, rightCoreWidth, dRight);
+
+rightCore *=
+    1.0 - smoothstep(0.22, 0.52, y);
+
+float core =
+    max(mainCore, max(leftCore, rightCore));
 
     // Color por altura
     vec3 colBase = vec3(1.0, 0.95, 0.55);
