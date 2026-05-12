@@ -7,16 +7,14 @@ out vec2 vUV;
 
 uniform float uOffsetX;
 uniform float uOffsetY;
-uniform float uScaleX;
-uniform float uScaleY;
+uniform float uScale;
 
 void main() {
     vUV = aUV;
 
     vec3 pos = aPos;
-
-    pos.x *= uScaleX;
-    pos.y *= uScaleY;
+    pos.x *= uScale;
+    pos.y *= uScale;
 
     pos.x += uOffsetX;
     pos.y += uOffsetY;

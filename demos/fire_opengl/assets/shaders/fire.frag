@@ -4,12 +4,9 @@ in vec2 vUV;
 out vec4 FragColor;
 
 uniform float uTime;
-uniform float uIntensity;
-uniform float uWind;
-uniform float uSeed;
 
 float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
 }
 
 float noise(vec2 p) {
@@ -29,106 +26,71 @@ float noise(vec2 p) {
 }
 
 float fbm(vec2 p) {
-    float value = 0.0;
-    float amplitude = 0.5;
+    float v = 0.0;
+    float a = 0.5;
 
-    value += amplitude * noise(p);
-    p *= 2.0;
-    amplitude *= 0.5;
+    v += a * noise(p); p *= 2.0; a *= 0.5;
+    v += a * noise(p); p *= 2.0; a *= 0.5;
+    v += a * noise(p); p *= 2.0; a *= 0.5;
+    v += a * noise(p);
 
-    value += amplitude * noise(p);
-    p *= 2.0;
-    amplitude *= 0.5;
-
-    value += amplitude * noise(p);
-    p *= 2.0;
-    amplitude *= 0.5;
-
-    value += amplitude * noise(p);
-
-    return value;
+    return v;
 }
 
 void main() {
     vec2 uv = vUV;
 
-    float height = uv.y;
+    float y = uv.y;
+    float x = uv.x - 0.5;
 
-    // Movimiento del fuego
-    uv.x += sin(uTime * 3.0 + uv.y * 8.0 + uSeed) * 0.04;
-    uv.x += uWind * 0.05 * height;
+    // Ruido que sube
+    float n = fbm(vec2(uv.x * 3.0, uv.y * 4.0 - uTime * 2.0));
 
-    // El ruido sube con el tiempo
-    vec2 noiseUV = vec2(
-        uv.x * 3.0,
-        uv.y * 4.0 - uTime * 1.8
-    );
+    // Movimiento lateral, más fuerte arriba
+    x += sin(uTime * 2.5 + y * 8.0) * 0.04 * y;
+    x += (n - 0.5) * 0.12 * y;
 
-    float n = fbm(noiseUV);
+    // Ancha abajo, estrecha arriba
+    float width = mix(0.34, 0.03, y);
 
-    // Centro de la llama
-    float center = 0.5;
+    // Romper borde de la llama
+    width += (n - 0.5) * 0.12;
 
-    // La llama es ancha abajo y estrecha arriba
-    float width = mix(0.32, 0.03, height);
+    float d = abs(x);
 
-    // El ruido rompe la silueta
-    width += (n - 0.5) * 0.16;
+    // Forma principal
+    float flame = 1.0 - smoothstep(width * 0.65, width, d);
 
-    float dist = abs(uv.x - center);
-
-    // Máscara principal de la llama
-    float flame = 1.0 - smoothstep(width * 0.65, width, dist);
+    // Nace suavemente en la base
+    flame *= smoothstep(0.02, 0.16, y);
 
     // Se apaga arriba
-    flame *= 1.0 - smoothstep(0.75, 1.0, height);
+    flame *= 1.0 - smoothstep(0.75, 1.0, y);
 
-    // Más fuerte abajo
-    flame *= smoothstep(0.0, 0.15, height);
-
-    // Núcleo blanco/amarillo
+    // Núcleo interior
     float coreWidth = width * 0.38;
-    float core = 1.0 - smoothstep(coreWidth * 0.5, coreWidth, dist);
-    core *= 1.0 - smoothstep(0.55, 0.95, height);
+    float core = 1.0 - smoothstep(coreWidth * 0.5, coreWidth, d);
+    core *= 1.0 - smoothstep(0.45, 0.85, y);
 
-    // Colores por altura
-    vec3 bottomColor = vec3(1.0, 0.95, 0.65);
-    vec3 midColor    = vec3(1.0, 0.38, 0.04);
-    vec3 topColor    = vec3(0.35, 0.02, 0.00);
+    // Color por altura
+    vec3 colBase = vec3(1.0, 0.95, 0.55);
+    vec3 colMid  = vec3(1.0, 0.35, 0.03);
+    vec3 colTop  = vec3(0.28, 0.02, 0.00);
 
-    vec3 fireColor;
+    vec3 color = mix(colBase, colMid, smoothstep(0.05, 0.45, y));
+    color = mix(color, colTop, smoothstep(0.45, 0.95, y));
 
-    if (height < 0.35) {
-        fireColor = mix(bottomColor, midColor, height / 0.35);
-    } else {
-        fireColor = mix(midColor, topColor, (height - 0.35) / 0.65);
-    }
+    color += core * vec3(1.0, 0.75, 0.30);
 
-    // Añadimos núcleo caliente
-    fireColor += core * vec3(1.0, 0.75, 0.35);
+    // Glow bajo, sin crear barra horizontal
+    float glow = 1.0 - smoothstep(width, width + 0.16, d);
+    glow *= smoothstep(0.10, 0.35, y);
+    glow *= 1.0 - smoothstep(0.65, 1.0, y);
 
-    // Parpadeo general
-    float flicker = 0.85 + 0.15 * sin(uTime * 12.0 + n * 6.0);
+    vec3 glowColor = vec3(1.0, 0.25, 0.03) * glow * 0.5;
 
-    fireColor *= flicker * uIntensity;
+    float alpha = flame + glow * 0.25;
+    alpha *= 0.90 + 0.10 * sin(uTime * 10.0 + n * 8.0);
 
-    // Halo exterior
-    float glow = 1.0 - smoothstep(width, width + 0.18, dist);
-
-    // Evita la franja horizontal en la base
-    glow *= smoothstep(0.08, 0.22, height);
-
-    // El glow se apaga arriba
-    glow *= 1.0 - height;
-    vec3 glowColor = vec3(1.0, 0.28, 0.03) * glow * 0.65;
-
-    float alpha = flame;
-    alpha += glow * 0.18;
-
-    // Fade general en la base para que no se vea el borde del quad
-    alpha *= smoothstep(0.03, 0.16, height);
-
-    alpha *= uIntensity;
-
-    FragColor = vec4(fireColor * flame + glowColor, alpha);
+    FragColor = vec4(color * flame + glowColor, alpha);
 }

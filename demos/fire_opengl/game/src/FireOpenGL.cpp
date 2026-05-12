@@ -277,40 +277,27 @@ void FireOpenGL::Update(float dt) {
 }
 
 void FireOpenGL::Render() {
-    // =====================================================
-    // 1. Renderizamos el fondo dentro del framebuffer
-    // =====================================================
+    // 1. Fondo al framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, scene_fbo_);
     glViewport(0, 0, window_width_, window_height_);
+    glClearColor(0.03f, 0.025f, 0.02f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    glClearColor(0.02f, 0.02f, 0.03f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // De momento no hace falta base_shader.
+    // El heat shader distorsionará este fondo oscuro.
 
-    // Fondo grande que ocupa toda la pantalla
-    RenderBackgroundQuad();
-
-    // =====================================================
-    // 2. Volvemos a la pantalla normal
-    // =====================================================
+    // 2. Pantalla normal
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, window_width_, window_height_);
+    glClearColor(0.03f, 0.025f, 0.02f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    glClearColor(0.02f, 0.02f, 0.03f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // =====================================================
-    // 3. Pintamos el fondo distorsionado por calor
-    // =====================================================
+    // 3. Distorsión del fondo
     RenderHeatQuad();
 
-    // =====================================================
-    // 4. Pintamos el fuego encima
-    // =====================================================
+    // 4. Fuego encima
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    RenderFireQuad(0.0f, 1.15f);
-    RenderFireQuad(-0.08f, 0.92f);
-    RenderFireQuad(0.08f, 0.80f);
+    RenderFireQuad(0.0f, 1.25f);
 
     SDL_GL_SwapWindow(window_.get());
 }
@@ -351,23 +338,15 @@ void FireOpenGL::RenderHeatQuad() {
 void FireOpenGL::RenderFireQuad(float offset_x, float scale) {
     fire_shader_.Use();
 
-    const float intensity = 0.85f + 0.15f * sinf(elapsed_time_ * 8.0f);
-    const float wind = sinf(elapsed_time_ * 1.4f);
-    const float seed = offset_x * 20.0f + scale * 3.0f;
-
     fire_shader_.SetFloat("uTime", elapsed_time_);
-    fire_shader_.SetFloat("uIntensity", intensity);
-    fire_shader_.SetFloat("uWind", wind);
-    fire_shader_.SetFloat("uSeed", seed);
-
     fire_shader_.SetFloat("uOffsetX", offset_x);
+    fire_shader_.SetFloat("uOffsetY", -0.35f);
     fire_shader_.SetFloat("uScale", scale);
 
     glBindVertexArray(quad_vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
-
 void FireOpenGL::RenderBaseQuad(float offset_x, float offset_y, float scale_x, float scale_y) {
     base_shader_.Use();
     base_shader_.SetFloat("uOffsetX", offset_x);
