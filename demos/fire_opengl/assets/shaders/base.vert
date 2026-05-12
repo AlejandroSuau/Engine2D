@@ -5,19 +5,7 @@ in vec2 aUV;
 
 out vec2 vUV;
 
-uniform float uOffsetX;
-uniform float uOffsetY;
-uniform float uScale;
-
 void main() {
     vUV = aUV;
-
-    vec3 pos = aPos;
-    pos.x *= uScale;
-    pos.y *= uScale;
-
-    pos.x += uOffsetX;
-    pos.y += uOffsetY;
-
-    gl_Position = vec4(pos, 1.0);
+    gl_Position = vec4(aPos, 1.0);
 }

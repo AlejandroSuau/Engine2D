@@ -36,9 +36,13 @@ private:
     GLuint scene_texture_ = 0;
     GLuint scene_rbo_ = 0;
 
-    GLuint quad_vao_ = 0;
-    GLuint quad_vbo_ = 0;
-    GLuint quad_ebo_ = 0;
+    GLuint fire_vao_ = 0;
+    GLuint fire_vbo_ = 0;
+    GLuint fire_ebo_ = 0;
+
+    GLuint screen_vao_ = 0;
+    GLuint screen_vbo_ = 0;
+    GLuint screen_ebo_ = 0;
 
     void SetupSceneFramebuffer();
     void ConfigureOpenGLAttributes();
@@ -57,4 +61,5 @@ private:
     void Shutdown();
 
     void Test();
+    void SetupScreenQuad();
 };

@@ -39,5 +39,5 @@ void main() {
 
     float alpha = mask * verticalFactor * 0.42;
 
-    FragColor = vec4(sceneColor.rgb, alpha);
+    FragColor = vec4(sceneColor.rgb, 1.0);
 }

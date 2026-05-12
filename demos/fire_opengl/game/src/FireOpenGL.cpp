@@ -26,16 +26,16 @@ FireOpenGL::~FireOpenGL() {
         glDeleteFramebuffers(1, &scene_fbo_);
     }
 
-    if (quad_ebo_ != 0) {
-        glDeleteBuffers(1, &quad_ebo_);
+    if (fire_ebo_ != 0) {
+        glDeleteBuffers(1, &fire_ebo_);
     }
 
-    if (quad_vbo_ != 0) {
-        glDeleteBuffers(1, &quad_vbo_);
+    if (fire_vbo_ != 0) {
+        glDeleteBuffers(1, &fire_vbo_);
     }
 
-    if (quad_vao_ != 0) {
-        glDeleteVertexArrays(1, &quad_vao_);
+    if (fire_vao_ != 0) {
+        glDeleteVertexArrays(1, &fire_vao_);
     }
     
     if (gl_context_ != nullptr) {
@@ -187,16 +187,16 @@ void FireOpenGL::SetupFireQuad() {
         2, 3, 0
     };
 
-    glGenVertexArrays(1, &quad_vao_);
-    glGenBuffers(1, &quad_vbo_);
-    glGenBuffers(1, &quad_ebo_);
+    glGenVertexArrays(1, &fire_vao_);
+    glGenBuffers(1, &fire_vbo_);
+    glGenBuffers(1, &fire_ebo_);
 
-    glBindVertexArray(quad_vao_);
+    glBindVertexArray(fire_vao_);
 
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
+    glBindBuffer(GL_ARRAY_BUFFER, fire_vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_ebo_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fire_ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // location 0 -> posición (vec3)
@@ -236,9 +236,10 @@ void FireOpenGL::Init() {
 
     fire_shader_.Load("assets/shaders/fire.vert", "assets/shaders/fire.frag");
     heat_shader_.Load("assets/shaders/heat.vert", "assets/shaders/heat.frag");
-    base_shader_.Load("assets/shaders/base.vert", "assets/shaders/base.frag");
+    base_shader_.Load("assets/shaders/base.vert", "assets/shaders/background.frag");
 
     SetupFireQuad();
+    SetupScreenQuad();
     SetupSceneFramebuffer();
 
     is_running_ = true;
@@ -277,58 +278,87 @@ void FireOpenGL::Update(float dt) {
 }
 
 void FireOpenGL::Render() {
-    // 1. Fondo al framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, scene_fbo_);
     glViewport(0, 0, window_width_, window_height_);
-    glClearColor(0.03f, 0.025f, 0.02f, 1.0f);
+    glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // De momento no hace falta base_shader.
-    // El heat shader distorsionará este fondo oscuro.
+    RenderBaseQuad(0.0f, 0.0f, 3.0f, 2.2f);
 
-    // 2. Pantalla normal
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, window_width_, window_height_);
-    glClearColor(0.03f, 0.025f, 0.02f, 1.0f);
+    glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // 3. Distorsión del fondo
     RenderHeatQuad();
 
-    // 4. Fuego encima
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     RenderFireQuad(0.0f, 1.25f);
 
     SDL_GL_SwapWindow(window_.get());
 }
 
-void FireOpenGL::RenderBackgroundQuad() {
+void FireOpenGL::SetupScreenQuad() {
+    const float vertices[] = {
+        // x      y      z      u     v
+        -1.0f, -1.0f, 0.0f,   0.0f, 0.0f,
+         1.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,   1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f,   0.0f, 1.0f
+    };
+
+    const unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    glGenVertexArrays(1, &screen_vao_);
+    glGenBuffers(1, &screen_vbo_);
+    glGenBuffers(1, &screen_ebo_);
+
+    glBindVertexArray(screen_vao_);
+
+    glBindBuffer(GL_ARRAY_BUFFER, screen_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, screen_ebo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+}
+
+/*void FireOpenGL::RenderBackgroundQuad() {
     base_shader_.Use();
 
     base_shader_.SetFloat("uTime", elapsed_time_);
 
     base_shader_.SetFloat("uOffsetX", 0.0f);
     base_shader_.SetFloat("uOffsetY", 0.0f);
-    base_shader_.SetFloat("uScaleX", 3.4f);
-    base_shader_.SetFloat("uScaleY", 2.4f);
 
-    glBindVertexArray(quad_vao_);
+    base_shader_.SetFloat("uScaleX", 3.0f);
+    base_shader_.SetFloat("uScaleY", 2.2f);
+
+    glBindVertexArray(fire_vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-}
+}*/
 
 void FireOpenGL::RenderHeatQuad() {
     heat_shader_.Use();
     heat_shader_.SetFloat("uTime", elapsed_time_);
     heat_shader_.SetInt("uSceneTexture", 0);
     heat_shader_.SetVec2("uResolution", static_cast<float>(window_width_), static_cast<float>(window_height_));
-    heat_shader_.SetFloat("uOffsetX", 0.0f);
-    heat_shader_.SetFloat("uScale", 1.45f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene_texture_);
 
-    glBindVertexArray(quad_vao_);
+    glBindVertexArray(screen_vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
@@ -343,7 +373,7 @@ void FireOpenGL::RenderFireQuad(float offset_x, float scale) {
     fire_shader_.SetFloat("uOffsetY", -0.35f);
     fire_shader_.SetFloat("uScale", scale);
 
-    glBindVertexArray(quad_vao_);
+    glBindVertexArray(fire_vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
@@ -357,7 +387,7 @@ void FireOpenGL::RenderBaseQuad(float offset_x, float offset_y, float scale_x, f
     // Color oscuro cálido
     base_shader_.SetVec3("uColor", 0.30f, 0.18f, 0.10f);
 
-    glBindVertexArray(quad_vao_);
+    glBindVertexArray(screen_vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
