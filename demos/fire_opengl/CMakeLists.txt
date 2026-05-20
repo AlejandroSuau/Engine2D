@@ -16,13 +16,17 @@ target_link_libraries(FireOpenGLShowcaseCore
 
 # Ejecutable muy delgado: sólo main.cpp
 add_executable(FireOpenGLShowcase game/src/main.cpp)
-target_link_libraries(FireOpenGLShowcase PRIVATE FireOpenGLShowcaseCore)
 
-# Copia de assets al lado del ejecutable (o usa symlinks en dev)
-add_custom_command(TARGET FireOpenGLShowcase POST_BUILD
+target_link_libraries(FireOpenGLShowcase
+    PRIVATE FireOpenGLShowcaseCore
+)
+
+# Copia SIEMPRE los assets al lado del ejecutable al compilar
+add_custom_target(CopyFireAssets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/assets
-            $<TARGET_FILE_DIR:FireOpenGLShowcase>/assets
+            ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/assets
+    COMMENT "Copying FireOpenGLShowcase assets"
 )
 
 # DLLs de SDL en Windows

@@ -53,13 +53,10 @@ private:
     void CoreLoop();
     void Update(float dt);
     void Render();
-    void RenderBackgroundQuad();
     void RenderHeatQuad();
     void RenderFireQuad(float offset_x, float scale);
     void RenderBaseQuad(float offset_x, float offset_y, float scale_x, float scale_y);
     void HandleEvents();
     void Shutdown();
-
-    void Test();
     void SetupScreenQuad();
 };

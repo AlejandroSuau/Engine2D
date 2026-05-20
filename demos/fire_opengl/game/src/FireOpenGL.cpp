@@ -236,7 +236,8 @@ void FireOpenGL::Init() {
 
     fire_shader_.Load("assets/shaders/fire.vert", "assets/shaders/fire.frag");
     heat_shader_.Load("assets/shaders/heat.vert", "assets/shaders/heat.frag");
-    base_shader_.Load("assets/shaders/base.vert", "assets/shaders/background.frag");
+    base_shader_.Load("assets/shaders/base.vert", "assets/shaders/base.frag");
+    
 
     SetupFireQuad();
     SetupScreenQuad();
@@ -332,22 +333,6 @@ void FireOpenGL::SetupScreenQuad() {
 
     glBindVertexArray(0);
 }
-
-/*void FireOpenGL::RenderBackgroundQuad() {
-    base_shader_.Use();
-
-    base_shader_.SetFloat("uTime", elapsed_time_);
-
-    base_shader_.SetFloat("uOffsetX", 0.0f);
-    base_shader_.SetFloat("uOffsetY", 0.0f);
-
-    base_shader_.SetFloat("uScaleX", 3.0f);
-    base_shader_.SetFloat("uScaleY", 2.2f);
-
-    glBindVertexArray(fire_vao_);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-}*/
 
 void FireOpenGL::RenderHeatQuad() {
     heat_shader_.Use();

@@ -32,6 +32,7 @@ uniform float uTime;
 const vec3 WALL_BASE_COLOR = vec3(0.045, 0.038, 0.035);
 
 const float WALL_NOISE_SCALE = 18.0;
+const float WALL_NOISE_INTENSITY = 0.035;
 
 const float HORIZONTAL_LINE_FREQUENCY = 55.0;
 const float HORIZONTAL_LINE_START = 0.91;
@@ -57,6 +58,11 @@ const vec2 EMBER_POSITION = vec2(0.5, 0.12);
 const float EMBER_VERTICAL_STRETCH = 2.5;
 const float EMBER_INNER_RADIUS = 0.02;
 const float EMBER_OUTER_RADIUS = 0.20;
+const vec3 EMBER_COLOR = vec3(1.0, 0.22, 0.04);
+const float EMBER_INTENSITY = 0.35;
+
+const vec2 SCREEN_CENTER = vec2(0.5, 0.5);
+const float VIGNETTE_STRENGTH = 0.65;
 
 
 // ------------------------------------------------------------
@@ -102,6 +108,15 @@ vec3 baseWallColor() {
 
 float wallNoise(vec2 uv) {
     return valueNoise(uv * WALL_NOISE_SCALE);
+}
+
+vec3 applyWallNoise(vec3 color, vec2 uv) {
+    float noiseValue = wallNoise(uv);
+
+    color +=
+        (noiseValue - 0.5) * WALL_NOISE_INTENSITY;
+
+    return color;
 }
 
 float horizontalLineMask(vec2 uv) {
@@ -170,6 +185,52 @@ vec3 applyFireLight(vec3 color, vec2 uv) {
     return color;
 }
 
+
+// ------------------------------------------------------------
+// Brasas / base caliente
+// ------------------------------------------------------------
+
+float emberMask(vec2 uv) {
+    vec2 emberUV =
+        uv - EMBER_POSITION;
+
+    emberUV.y *= EMBER_VERTICAL_STRETCH;
+
+    return 1.0 - smoothstep(
+        EMBER_INNER_RADIUS,
+        EMBER_OUTER_RADIUS,
+        length(emberUV)
+    );
+}
+
+vec3 applyEmberGlow(vec3 color, vec2 uv) {
+    float ember = emberMask(uv);
+
+    color +=
+        EMBER_COLOR
+        * ember
+        * EMBER_INTENSITY;
+
+    return color;
+}
+
+
+// ------------------------------------------------------------
+// Oscurecimiento de bordes
+// ------------------------------------------------------------
+
+float vignetteMask(vec2 uv) {
+    float distanceToCenter =
+        distance(uv, SCREEN_CENTER);
+
+    return 1.0 - distanceToCenter * VIGNETTE_STRENGTH;
+}
+
+vec3 applyVignette(vec3 color, vec2 uv) {
+    return color * vignetteMask(uv);
+}
+
+
 // ------------------------------------------------------------
 // Programa principal del fragment shader
 // ------------------------------------------------------------
@@ -179,8 +240,11 @@ void main() {
 
     vec3 color = baseWallColor();
 
+    color = applyWallNoise(color, uv);
     color = applyWallLines(color, uv);
     color = applyFireLight(color, uv);
+    color = applyEmberGlow(color, uv);
+    color = applyVignette(color, uv);
 
     FragColor = vec4(color, 1.0);
 }

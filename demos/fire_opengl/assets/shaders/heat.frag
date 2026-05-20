@@ -5,68 +5,144 @@ out vec4 FragColor;
 
 uniform sampler2D uSceneTexture;
 uniform float uTime;
-uniform vec2 uResolution;
+
+// ============================================================
+//  heat.frag refactorizado
+// ------------------------------------------------------------
+//  Este shader genera la distorsión visual del aire caliente.
+//
+//  La idea general es:
+//    1. Leer la escena ya renderizada desde una textura.
+//    2. Crear una máscara que define dónde hay calor.
+//    3. Generar ondas animadas ascendentes.
+//    4. Desplazar ligeramente las coordenadas de muestreo.
+//    5. Leer la textura desplazada para simular refracción.
+//
+//  No simula físicamente el calor. Es un postprocesado visual
+//  inspirado en la refracción producida por aire caliente.
+// ============================================================
+
+
+// ------------------------------------------------------------
+// Parámetros artísticos principales
+// ------------------------------------------------------------
+
+const float FIRE_CENTER_X = 0.5;
+
+const float HEAT_BOTTOM_WIDTH = 0.30;
+const float HEAT_TOP_WIDTH    = 0.11;
+
+const float HEAT_HORIZONTAL_SOFTNESS = 0.65;
+
+const float HEAT_VERTICAL_START = 0.12;
+const float HEAT_VERTICAL_FULL  = 0.30;
+const float HEAT_VERTICAL_FADE_START = 0.90;
+const float HEAT_VERTICAL_FADE_END   = 1.00;
+
+const float WAVE_1_FREQUENCY_Y = 45.0;
+const float WAVE_1_FREQUENCY_X = 9.0;
+const float WAVE_1_SPEED       = 8.0;
+
+const float WAVE_2_FREQUENCY_Y = 80.0;
+const float WAVE_2_SPEED       = 13.0;
+
+const float DISTORTION_X_WAVE_1 = 0.0030;
+const float DISTORTION_X_WAVE_2 = 0.0015;
+
+const float DISTORTION_Y_WAVE_1 = 0.0020;
+const float DISTORTION_Y_WAVE_2 = 0.0025;
+
+// ------------------------------------------------------------
+// Máscara de zona caliente
+// ------------------------------------------------------------
+
+float heatWidthAtHeight(float y) {
+    // El calor ocupa más anchura cerca de la base del fuego
+    // y se estrecha progresivamente al subir.
+    return mix(HEAT_BOTTOM_WIDTH, HEAT_TOP_WIDTH, y);
+}
+
+float horizontalHeatMask(vec2 uv) {
+    float distanceToFireAxis = abs(uv.x - FIRE_CENTER_X);
+    float heatWidth = heatWidthAtHeight(uv.y);
+
+    return 1.0 - smoothstep(
+        heatWidth * HEAT_HORIZONTAL_SOFTNESS,
+        heatWidth,
+        distanceToFireAxis
+    );
+}
+
+float verticalHeatMask(vec2 uv) {
+    // El efecto aparece suavemente sobre la base del fuego
+    // y desaparece al llegar a la zona superior de la pantalla.
+    float appearFromBase = smoothstep(
+        HEAT_VERTICAL_START,
+        HEAT_VERTICAL_FULL,
+        uv.y
+    );
+
+    float fadeAtTop = 1.0 - smoothstep(
+        HEAT_VERTICAL_FADE_START,
+        HEAT_VERTICAL_FADE_END,
+        uv.y
+    );
+
+    return appearFromBase * fadeAtTop;
+}
+
+float heatMask(vec2 uv) {
+    return horizontalHeatMask(uv)
+         * verticalHeatMask(uv);
+}
+
+
+// ------------------------------------------------------------
+// Ondas de distorsión
+// ------------------------------------------------------------
+
+float heatWave1(vec2 uv) {
+    return sin(
+        uv.y * WAVE_1_FREQUENCY_Y
+        - uTime * WAVE_1_SPEED
+        + uv.x * WAVE_1_FREQUENCY_X
+    );
+}
+
+float heatWave2(vec2 uv) {
+    return sin(
+        uv.y * WAVE_2_FREQUENCY_Y
+        - uTime * WAVE_2_SPEED
+    );
+}
+
+vec2 heatDistortion(vec2 uv) {
+    float wave1 = heatWave1(uv);
+    float wave2 = heatWave2(uv);
+
+    float distortionX =
+        wave1 * DISTORTION_X_WAVE_1 +
+        wave2 * DISTORTION_X_WAVE_2;
+
+    float distortionY =
+        wave1 * DISTORTION_Y_WAVE_1 +
+        wave2 * DISTORTION_Y_WAVE_2;
+
+    return vec2(distortionX, distortionY);
+}
+
+// ------------------------------------------------------------
+// Programa principal del fragment shader
+// ------------------------------------------------------------
 
 void main() {
     vec2 uv = vUV;
 
-    // Centro del fuego en pantalla
-    vec2 fireCenter = vec2(0.5, 0.22);
+    float mask = heatMask(uv);
+    vec2 distortion = heatDistortion(uv);
 
-    // Distancia al eje vertical del fuego
-    float distX = abs(uv.x - fireCenter.x);
+    vec2 sceneUV = uv + distortion * mask;
+    vec3 sceneColor = texture(uSceneTexture, sceneUV).rgb;
 
-    // El calor es más ancho abajo y más fino arriba
-    float heatWidth = mix(0.30, 0.11, uv.y);
-
-    float horizontalMask =
-        1.0 - smoothstep(heatWidth * 0.65, heatWidth, distX);
-
-    // Solo queremos calor por encima de la base
-    float verticalMask =
-        smoothstep(0.12, 0.30, uv.y) *
-        (1.0 - smoothstep(0.90, 1.0, uv.y));
-
-    // Más fuerte cerca del fuego
-    float distanceToFire = distance(uv, fireCenter);
-
-    float radialMask =
-        1.0 - smoothstep(0.05, 0.65, distanceToFire);
-
-    float mask =
-        horizontalMask * verticalMask * radialMask;
-
-    // Ondas ascendentes
-    float wave1 =
-        sin(uv.y * 45.0 - uTime * 8.0 + uv.x * 9.0);
-
-    float wave2 =
-        sin(uv.y * 80.0 - uTime * 13.0);
-
-    float wave3 =
-        sin((uv.x + uv.y) * 35.0 + uTime * 5.0);
-
-float distortionX =
-    wave1 * 0.003 +
-    wave2 * 0.0015 +
-    wave3 * 0.001;
-
-float distortionY =
-    wave1 * 0.002 +
-    wave2 * 0.0025;
-
-    vec2 screenUV =
-        gl_FragCoord.xy / uResolution;
-
-screenUV.x += distortionX * mask;
-screenUV.y += distortionY * mask;
-
-    screenUV =
-        clamp(screenUV, vec2(0.001), vec2(0.999));
-
-    vec3 sceneColor =
-        texture(uSceneTexture, screenUV).rgb;
-
-    FragColor =
-        vec4(sceneColor, 1.0);
+    FragColor = vec4(sceneColor, 1.0);
 }
