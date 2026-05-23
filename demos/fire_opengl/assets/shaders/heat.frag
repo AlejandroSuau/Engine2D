@@ -6,45 +6,25 @@ out vec4 FragColor;
 uniform sampler2D uSceneTexture;
 uniform float uTime;
 
-// ============================================================
-//  heat.frag refactorizado
-// ------------------------------------------------------------
-//  Este shader genera la distorsión visual del aire caliente.
-//
-//  La idea general es:
-//    1. Leer la escena ya renderizada desde una textura.
-//    2. Crear una máscara que define dónde hay calor.
-//    3. Generar ondas animadas ascendentes.
-//    4. Desplazar ligeramente las coordenadas de muestreo.
-//    5. Leer la textura desplazada para simular refracción.
-//
-//  No simula físicamente el calor. Es un postprocesado visual
-//  inspirado en la refracción producida por aire caliente.
-// ============================================================
-
-
-// ------------------------------------------------------------
-// Parámetros artísticos principales
-// ------------------------------------------------------------
-
+// Variables "artísticas" para evitar números mágicos en el código
 const float FIRE_CENTER_X = 0.5;
 
 const float HEAT_BOTTOM_WIDTH = 0.30;
-const float HEAT_TOP_WIDTH    = 0.11;
+const float HEAT_TOP_WIDTH = 0.11;
 
 const float HEAT_HORIZONTAL_SOFTNESS = 0.65;
 
 const float HEAT_VERTICAL_START = 0.12;
-const float HEAT_VERTICAL_FULL  = 0.30;
+const float HEAT_VERTICAL_FULL = 0.30;
 const float HEAT_VERTICAL_FADE_START = 0.90;
-const float HEAT_VERTICAL_FADE_END   = 1.00;
+const float HEAT_VERTICAL_FADE_END = 1.00;
 
 const float WAVE_1_FREQUENCY_Y = 45.0;
 const float WAVE_1_FREQUENCY_X = 9.0;
-const float WAVE_1_SPEED       = 8.0;
+const float WAVE_1_SPEED = 8.0;
 
 const float WAVE_2_FREQUENCY_Y = 80.0;
-const float WAVE_2_SPEED       = 13.0;
+const float WAVE_2_SPEED = 13.0;
 
 const float DISTORTION_X_WAVE_1 = 0.0030;
 const float DISTORTION_X_WAVE_2 = 0.0015;
@@ -52,16 +32,13 @@ const float DISTORTION_X_WAVE_2 = 0.0015;
 const float DISTORTION_Y_WAVE_1 = 0.0020;
 const float DISTORTION_Y_WAVE_2 = 0.0025;
 
-// ------------------------------------------------------------
-// Máscara de zona caliente
-// ------------------------------------------------------------
-
+// Calcula la anchura de la zona de calor según la altura.
 float heatWidthAtHeight(float y) {
-    // El calor ocupa más anchura cerca de la base del fuego
-    // y se estrecha progresivamente al subir.
     return mix(HEAT_BOTTOM_WIDTH, HEAT_TOP_WIDTH, y);
 }
 
+// Máscara horizontal
+// Mayor intensidad en el eje central
 float horizontalHeatMask(vec2 uv) {
     float distanceToFireAxis = abs(uv.x - FIRE_CENTER_X);
     float heatWidth = heatWidthAtHeight(uv.y);
@@ -73,9 +50,9 @@ float horizontalHeatMask(vec2 uv) {
     );
 }
 
+// Máscara vertical
+// Evita que el efecto aparezca de golpe en la base o que llegue con fuerza arriba
 float verticalHeatMask(vec2 uv) {
-    // El efecto aparece suavemente sobre la base del fuego
-    // y desaparece al llegar a la zona superior de la pantalla.
     float appearFromBase = smoothstep(
         HEAT_VERTICAL_START,
         HEAT_VERTICAL_FULL,
@@ -96,11 +73,8 @@ float heatMask(vec2 uv) {
          * verticalHeatMask(uv);
 }
 
-
-// ------------------------------------------------------------
-// Ondas de distorsión
-// ------------------------------------------------------------
-
+// Primera onda
+// Vibración lenta y ancha
 float heatWave1(vec2 uv) {
     return sin(
         uv.y * WAVE_1_FREQUENCY_Y
@@ -109,6 +83,8 @@ float heatWave1(vec2 uv) {
     );
 }
 
+// Segunda onda
+// Vibración más rápida y estrecha
 float heatWave2(vec2 uv) {
     return sin(
         uv.y * WAVE_2_FREQUENCY_Y
@@ -116,6 +92,7 @@ float heatWave2(vec2 uv) {
     );
 }
 
+// Calcula el desplazamiento UV producido por el calor
 vec2 heatDistortion(vec2 uv) {
     float wave1 = heatWave1(uv);
     float wave2 = heatWave2(uv);
@@ -130,10 +107,6 @@ vec2 heatDistortion(vec2 uv) {
 
     return vec2(distortionX, distortionY);
 }
-
-// ------------------------------------------------------------
-// Programa principal del fragment shader
-// ------------------------------------------------------------
 
 void main() {
     vec2 uv = vUV;

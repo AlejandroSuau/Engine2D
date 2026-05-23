@@ -1,5 +1,8 @@
 #include "FireOpenGL.hpp"
 
+#include <stdexcept>
+#include <string>
+
 FireOpenGL::FireOpenGL(int window_width, int window_height)
     : sdl_initializer_(std::make_unique<SDLInitializer>())
     , window_width_(window_width)
@@ -14,6 +17,7 @@ FireOpenGL::FireOpenGL(int window_width, int window_height)
 }
 
 FireOpenGL::~FireOpenGL() {
+    // Liberar framebuffer usado para renderizar la escena base.
     if (scene_rbo_ != 0) {
         glDeleteRenderbuffers(1, &scene_rbo_);
     }
@@ -25,7 +29,8 @@ FireOpenGL::~FireOpenGL() {
     if (scene_fbo_ != 0) {
         glDeleteFramebuffers(1, &scene_fbo_);
     }
-
+    
+    // Liberar geometría del fuego
     if (fire_ebo_ != 0) {
         glDeleteBuffers(1, &fire_ebo_);
     }
@@ -38,77 +43,23 @@ FireOpenGL::~FireOpenGL() {
         glDeleteVertexArrays(1, &fire_vao_);
     }
     
+    // Liberar geometría de pantalla completa
+    if (screen_ebo_ != 0) {
+        glDeleteBuffers(1, &screen_ebo_);
+    }
+
+    if (screen_vbo_ != 0) {
+        glDeleteBuffers(1, &screen_vbo_);
+    }
+
+    if (screen_vao_ != 0) {
+        glDeleteVertexArrays(1, &screen_vao_);
+    }
+
     if (gl_context_ != nullptr) {
         SDL_GL_DeleteContext(gl_context_);
         gl_context_ = nullptr;
     }
-}
-
-void FireOpenGL::Run() {
-    Init();
-    CoreLoop();
-}
-
-void FireOpenGL::SetupSceneFramebuffer() {
-    // Crear framebuffer
-    glGenFramebuffers(1, &scene_fbo_);
-    glBindFramebuffer(GL_FRAMEBUFFER, scene_fbo_);
-
-    // Crear textura color donde se renderizará la escena
-    glGenTextures(1, &scene_texture_);
-    glBindTexture(GL_TEXTURE_2D, scene_texture_);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGBA,
-        window_width_,
-        window_height_,
-        0,
-        GL_RGBA,
-        GL_UNSIGNED_BYTE,
-        nullptr
-    );
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER,
-        GL_COLOR_ATTACHMENT0,
-        GL_TEXTURE_2D,
-        scene_texture_,
-        0
-    );
-
-    // Crear renderbuffer para profundidad y stencil
-    glGenRenderbuffers(1, &scene_rbo_);
-    glBindRenderbuffer(GL_RENDERBUFFER, scene_rbo_);
-    glRenderbufferStorage(
-        GL_RENDERBUFFER,
-        GL_DEPTH24_STENCIL8,
-        window_width_,
-        window_height_
-    );
-
-    glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER,
-        GL_DEPTH_STENCIL_ATTACHMENT,
-        GL_RENDERBUFFER,
-        scene_rbo_
-    );
-
-    // Verificar que el framebuffer está completo
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        throw std::runtime_error("Scene framebuffer is not complete");
-    }
-
-    // Desbind
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void FireOpenGL::ConfigureOpenGLAttributes() {
@@ -124,12 +75,9 @@ void FireOpenGL::ConfigureOpenGLAttributes() {
         throw std::runtime_error(std::string("Error setting OpenGL minor version: ") + SDL_GetError());
     }
 
+    // Doble buffer para evitar parpadeos al dibujar
     if (SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) != 0) {
         throw std::runtime_error(std::string("Error setting double buffer: ") + SDL_GetError());
-    }
-
-    if (SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24) != 0) {
-        throw std::runtime_error(std::string("Error setting depth buffer size: ") + SDL_GetError());
     }
 }
 
@@ -158,6 +106,7 @@ void FireOpenGL::CreateOpenGLContext() {
         throw std::runtime_error(std::string("Error making OpenGL context current: ") + SDL_GetError());
     }
 
+    // GLAD carga las funciones de OpenGL
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         throw std::runtime_error("Error initializing GLAD");
     }
@@ -166,71 +115,25 @@ void FireOpenGL::CreateOpenGLContext() {
     if (version) {
         SDL_Log("OpenGL version: %s", version);
     }
-
+    
+    // VSync: sincroniza el swap de buffers con la pantalla
     if (SDL_GL_SetSwapInterval(1) != 0) {
         throw std::runtime_error(std::string("Error enabling VSync: ") + SDL_GetError());
     }
 }
 
-void FireOpenGL::SetupFireQuad() {
-    // Cada vértice: posición (x, y, z) + UV (u, v)
-    const float vertices[] = {
-        // x      y      z      u     v
-        -0.3f, -0.6f, 0.0f,   0.0f, 0.0f, // abajo izquierda
-        0.3f, -0.6f, 0.0f,   1.0f, 0.0f, // abajo derecha
-        0.3f,  0.6f, 0.0f,   1.0f, 1.0f, // arriba derecha
-        -0.3f,  0.6f, 0.0f,   0.0f, 1.0f  // arriba izquierda
-    };
-
-    const unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    glGenVertexArrays(1, &fire_vao_);
-    glGenBuffers(1, &fire_vbo_);
-    glGenBuffers(1, &fire_ebo_);
-
-    glBindVertexArray(fire_vao_);
-
-    glBindBuffer(GL_ARRAY_BUFFER, fire_vbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fire_ebo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // location 0 -> posición (vec3)
-    glVertexAttribPointer(
-        0,                  // índice del atributo
-        3,                  // número de componentes
-        GL_FLOAT,
-        GL_FALSE,
-        5 * sizeof(float),  // stride total
-        (void*)0
-    );
-    glEnableVertexAttribArray(0);
-
-    // location 1 -> UV (vec2)
-    glVertexAttribPointer(
-        1,
-        2,
-        GL_FLOAT,
-        GL_FALSE,
-        5 * sizeof(float),
-        (void*)(3 * sizeof(float))
-    );
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
+void FireOpenGL::Run() {
+    Init();
+    CoreLoop();
 }
 
 void FireOpenGL::Init() {
     SDL_SetWindowPosition(window_.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
     glViewport(0, 0, window_width_, window_height_);
-    // glEnable(GL_DEPTH_TEST);
     glDisable(GL_DEPTH_TEST);
 
+    // Activa transparencia para poder mezclar el fuego con el fondo
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -238,7 +141,6 @@ void FireOpenGL::Init() {
     heat_shader_.Load("assets/shaders/heat.vert", "assets/shaders/heat.frag");
     base_shader_.Load("assets/shaders/base.vert", "assets/shaders/base.frag");
     
-
     SetupFireQuad();
     SetupScreenQuad();
     SetupSceneFramebuffer();
@@ -274,29 +176,145 @@ void FireOpenGL::CoreLoop() {
     }
 }
 
+void FireOpenGL::SetupSceneFramebuffer() {
+    // Framebuffer donde se renderiza primero la escena base
+    // Luego esa textura se usa en el shader de calor para distorsionarla
+    glGenFramebuffers(1, &scene_fbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene_fbo_);
+
+    // Textura de color asociada al framebuffer
+    glGenTextures(1, &scene_texture_);
+    glBindTexture(GL_TEXTURE_2D, scene_texture_);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        window_width_,
+        window_height_,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        nullptr
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_COLOR_ATTACHMENT0,
+        GL_TEXTURE_2D,
+        scene_texture_,
+        0
+    );
+
+    // Desbind
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void FireOpenGL::SetupFireQuad() {
+    // Quad pequeño sobre el que se dibuja el fuego.
+    // Cada vértice contiene:
+    // posición: x, y, z
+    // coordenadas UV: u, v
+    const float vertices[] = {
+        // x      y      z      u     v
+        -0.3f, -0.6f, 0.0f,   0.0f, 0.0f, // abajo izquierda
+        0.3f, -0.6f, 0.0f,   1.0f, 0.0f, // abajo derecha
+        0.3f,  0.6f, 0.0f,   1.0f, 1.0f, // arriba derecha
+        -0.3f,  0.6f, 0.0f,   0.0f, 1.0f  // arriba izquierda
+    };
+
+    const unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    glGenVertexArrays(1, &fire_vao_);
+    glGenBuffers(1, &fire_vbo_);
+    glGenBuffers(1, &fire_ebo_);
+
+    glBindVertexArray(fire_vao_);
+
+    glBindBuffer(GL_ARRAY_BUFFER, fire_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fire_ebo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // location 0 -> aPos en vertex shader
+    glVertexAttribPointer(
+        0,                  // índice del atributo
+        3,                  // número de componentes
+        GL_FLOAT,
+        GL_FALSE,
+        5 * sizeof(float),  // stride total
+        (void*)0
+    );
+    glEnableVertexAttribArray(0);
+
+    // location 1 -> aUV en el vertex shader
+    glVertexAttribPointer(
+        1,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        5 * sizeof(float),
+        (void*)(3 * sizeof(float))
+    );
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+}
+
 void FireOpenGL::Update(float dt) {
     elapsed_time_ += dt;
 }
 
 void FireOpenGL::Render() {
+    // Renderizar la escena base a una textura.
     glBindFramebuffer(GL_FRAMEBUFFER, scene_fbo_);
     glViewport(0, 0, window_width_, window_height_);
+
     glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     RenderBaseQuad(0.0f, 0.0f, 3.0f, 2.2f);
 
+    // Volver al framebuffer principal de la ventana.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, window_width_, window_height_);
     glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Dibujar la escena base distorsionada por el shader de calo
     RenderHeatQuad();
 
+    // Dibujar encima el fuego con transparencia.
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     RenderFireQuad(0.0f, 1.25f);
 
     SDL_GL_SwapWindow(window_.get());
+}
+
+void FireOpenGL::RenderHeatQuad() {
+    heat_shader_.Use();
+    heat_shader_.SetFloat("uTime", elapsed_time_);
+    heat_shader_.SetInt("uSceneTexture", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene_texture_);
+
+    glBindVertexArray(screen_vao_);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void FireOpenGL::SetupScreenQuad() {
@@ -334,22 +352,6 @@ void FireOpenGL::SetupScreenQuad() {
     glBindVertexArray(0);
 }
 
-void FireOpenGL::RenderHeatQuad() {
-    heat_shader_.Use();
-    heat_shader_.SetFloat("uTime", elapsed_time_);
-    heat_shader_.SetInt("uSceneTexture", 0);
-    heat_shader_.SetVec2("uResolution", static_cast<float>(window_width_), static_cast<float>(window_height_));
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene_texture_);
-
-    glBindVertexArray(screen_vao_);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 void FireOpenGL::RenderFireQuad(float offset_x, float scale) {
     fire_shader_.Use();
 
@@ -369,7 +371,7 @@ void FireOpenGL::RenderBaseQuad(float offset_x, float offset_y, float scale_x, f
     base_shader_.SetFloat("uScaleX", scale_x);
     base_shader_.SetFloat("uScaleY", scale_y);
 
-    // Color oscuro cálido
+    // Color oscuro como base visual de la escena
     base_shader_.SetVec3("uColor", 0.30f, 0.18f, 0.10f);
 
     glBindVertexArray(screen_vao_);

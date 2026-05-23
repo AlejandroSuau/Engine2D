@@ -5,33 +5,8 @@ out vec4 FragColor;
 
 uniform float uTime;
 
-// ============================================================
-//  background.frag refactorizado
-// ------------------------------------------------------------
-//  Este shader genera un fondo procedural oscuro iluminado
-//  por el fuego.
-//
-//  La idea general es:
-//    1. Crear una pared oscura como color base.
-//    2. Añadir ruido suave para evitar un color plano.
-//    3. Añadir líneas horizontales y verticales como textura.
-//    4. Simular luz naranja del fuego sobre la pared.
-//    5. Añadir una zona inferior cálida tipo brasas.
-//    6. Oscurecer los bordes con una viñeta.
-//
-//  No representa una pared físicamente simulada.
-//  Es un fondo procedural estilizado que sirve para reforzar
-//  visualmente la llama y la distorsión térmica.
-// ============================================================
-
-
-// ------------------------------------------------------------
-// Parámetros artísticos principales
-// ------------------------------------------------------------
-
+// Variables "artísticas" para evitar números mágicos en el código
 const vec3 WALL_BASE_COLOR = vec3(0.045, 0.038, 0.035);
-
-const float WALL_NOISE_SCALE = 18.0;
 
 const float HORIZONTAL_LINE_FREQUENCY = 55.0;
 const float HORIZONTAL_LINE_START = 0.91;
@@ -49,64 +24,9 @@ const float FIRE_LIGHT_OUTER_RADIUS = 0.62;
 const vec3 FIRE_LIGHT_COLOR = vec3(1.0, 0.38, 0.07);
 const float FIRE_LIGHT_INTENSITY = 0.45;
 
-const float FLICKER_BASE = 0.85;
-const float FLICKER_AMOUNT = 0.15;
-const float FLICKER_SPEED = 8.0;
-
-const vec2 EMBER_POSITION = vec2(0.5, 0.12);
-const float EMBER_VERTICAL_STRETCH = 2.5;
-const float EMBER_INNER_RADIUS = 0.02;
-const float EMBER_OUTER_RADIUS = 0.20;
-
-
-// ------------------------------------------------------------
-// Ruido procedural
-// ------------------------------------------------------------
-
-float hash(vec2 p) {
-    return fract(
-        sin(dot(p, vec2(127.1, 311.7))) *
-        43758.5453
-    );
-}
-
-float valueNoise(vec2 p) {
-    vec2 cell = floor(p);
-    vec2 local = fract(p);
-
-    float bottomLeft  = hash(cell);
-    float bottomRight = hash(cell + vec2(1.0, 0.0));
-    float topLeft     = hash(cell + vec2(0.0, 1.0));
-    float topRight    = hash(cell + vec2(1.0, 1.0));
-
-    vec2 smoothLocal =
-        local * local * (3.0 - 2.0 * local);
-
-    float bottom =
-        mix(bottomLeft, bottomRight, smoothLocal.x);
-
-    float top =
-        mix(topLeft, topRight, smoothLocal.x);
-
-    return mix(bottom, top, smoothLocal.y);
-}
-
-
-// ------------------------------------------------------------
-// Textura de pared
-// ------------------------------------------------------------
-
-vec3 baseWallColor() {
-    return WALL_BASE_COLOR;
-}
-
-float wallNoise(vec2 uv) {
-    return valueNoise(uv * WALL_NOISE_SCALE);
-}
-
+// Máscara para las líneas horizontales
 float horizontalLineMask(vec2 uv) {
-    float wave =
-        sin(uv.y * HORIZONTAL_LINE_FREQUENCY);
+    float wave = sin(uv.y * HORIZONTAL_LINE_FREQUENCY);
 
     return smoothstep(
         HORIZONTAL_LINE_START,
@@ -115,9 +35,9 @@ float horizontalLineMask(vec2 uv) {
     );
 }
 
+// Máscara para las líneas verticales
 float verticalLineMask(vec2 uv) {
-    float wave =
-        sin(uv.x * VERTICAL_LINE_FREQUENCY);
+    float wave = sin(uv.x * VERTICAL_LINE_FREQUENCY);
 
     return smoothstep(
         VERTICAL_LINE_START,
@@ -126,6 +46,7 @@ float verticalLineMask(vec2 uv) {
     );
 }
 
+// Añade líneas de la pared al color base
 vec3 applyWallLines(vec3 color, vec2 uv) {
     float horizontalLines = horizontalLineMask(uv);
     float verticalLines = verticalLineMask(uv);
@@ -136,14 +57,9 @@ vec3 applyWallLines(vec3 color, vec2 uv) {
     return color;
 }
 
-
-// ------------------------------------------------------------
-// Iluminación procedente del fuego
-// ------------------------------------------------------------
-
+// Calcula la zona iluminada por el fuego (desvaneciendo el radio exterior)
 float fireGlowMask(vec2 uv) {
-    float distanceToFire =
-        distance(uv, FIRE_LIGHT_POSITION);
+    float distanceToFire = distance(uv, FIRE_LIGHT_POSITION);
 
     return 1.0 - smoothstep(
         FIRE_LIGHT_INNER_RADIUS,
@@ -152,33 +68,22 @@ float fireGlowMask(vec2 uv) {
     );
 }
 
-float fireFlicker() {
-    return FLICKER_BASE
-         + FLICKER_AMOUNT * sin(uTime * FLICKER_SPEED);
-}
-
+// Añade la iluminación procedente del fuego al color de la pared
 vec3 applyFireLight(vec3 color, vec2 uv) {
     float glow = fireGlowMask(uv);
-    float flicker = fireFlicker();
 
     color +=
         FIRE_LIGHT_COLOR
         * glow
-        * FIRE_LIGHT_INTENSITY
-        * flicker;
+        * FIRE_LIGHT_INTENSITY;
 
     return color;
 }
 
-// ------------------------------------------------------------
-// Programa principal del fragment shader
-// ------------------------------------------------------------
-
 void main() {
     vec2 uv = vUV;
 
-    vec3 color = baseWallColor();
-
+    vec3 color = WALL_BASE_COLOR;
     color = applyWallLines(color, uv);
     color = applyFireLight(color, uv);
 
