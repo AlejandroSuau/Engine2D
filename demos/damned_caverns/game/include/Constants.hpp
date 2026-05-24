@@ -13,14 +13,11 @@ static constexpr uint64_t kTargetFPS = 60;
 static constexpr uint64_t kFixedTimeStep = 1000 / kTargetFPS;
 static constexpr uint64_t kFrameDelay = 1000 / kTargetFPS; // Frame delay en milliseconds
 
-static constexpr float kDemoTimeLimit = 40.0f;
-static constexpr float kBPM = 120.0f;
-static constexpr float kBeatDuration = 60.f / kBPM;
-
 // Map
-/*Vec2<int> startX = {2, 7};
-Vec2<int> monsterX = {5, 4};
-Vec2<int> exitX = {8, 8};*/
+static const float kPlayerDimensions = 20.f;
+static const Vec2<int> kPlayerStartColRow {2, 7};
+static const Vec2<int> kMonsterStartColRow {5, 4};
+static const Vec2<int> kExitColRow {8, 8};
 
 static const std::size_t kMapColumnCount = 10;
 static const std::size_t kMapRowCount = 10;

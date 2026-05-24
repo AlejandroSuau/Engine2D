@@ -13,6 +13,11 @@ DamnedCaverns::DamnedCaverns(int window_width, int window_height)
     , renderer_(nullptr, SDL_DestroyRenderer)
     , is_running_(false)
     , grid_({0, 0}, kMapColumnCount, kMapRowCount, kCellDimensions)
+    , player_{
+        .direction_ = {-1, 0},
+        .position_ = grid_.ColRowToCoords(kPlayerStartColRow),
+        .speed_ = 100.0f
+    }
 {
     std::cout << "Initializing Damned Caverns..." << std::endl;
     CreateWindow();
@@ -91,6 +96,7 @@ void DamnedCaverns::CoreLoop() {
 
 void DamnedCaverns::Update(float dt) {
     elapsed_time_ += dt;
+    player_.Update(dt, grid_);
 }
 
 void DamnedCaverns::Render() {
@@ -98,7 +104,16 @@ void DamnedCaverns::Render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // Render
+    // Custom render
+    RenderVisualHelper();
+
+    // End Render
+    SDL_RenderPresent(renderer);
+}
+
+void DamnedCaverns::RenderVisualHelper() {
+    auto* renderer = renderer_.get();
+    // Render cells
     const auto& cells = grid_.Cells();
     SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
     for (const auto& cell : cells) {
@@ -110,16 +125,36 @@ void DamnedCaverns::Render() {
         };
 
         if (cell.is_walkable_) {
-            SDL_SetRenderDrawColor(renderer_.get(), 255, 255, 255, 255);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         } else {
-            SDL_SetRenderDrawColor(renderer_.get(), 0, 0, 0, 255);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         }
 
-        SDL_RenderFillRectF(renderer_.get(), &rect);
+        SDL_RenderFillRectF(renderer, &rect);
     }
-    
-    // End Render
-    SDL_RenderPresent(renderer);
+
+    // Render Player
+    SDL_SetRenderDrawColor(renderer_.get(), 0, 0, 255, 255);
+    const SDL_FRect player_rect {
+        player_.position_.x, player_.position_.y, kPlayerDimensions, kPlayerDimensions
+    };
+    SDL_RenderFillRectF(renderer, &player_rect);
+
+    // Render Monster
+    SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
+    const auto monster_pos = grid_.ColRowToCoords(kMonsterStartColRow);
+    const auto monster_rect = SDL_FRect {
+        monster_pos.x, monster_pos.y, kCellDimensionsF, kCellDimensionsF
+    };
+    SDL_RenderFillRectF(renderer, &monster_rect);
+
+    // Render Exit
+    SDL_SetRenderDrawColor(renderer_.get(), 0, 255, 0, 255);
+    const auto exit_pos = grid_.ColRowToCoords(kExitColRow);
+    const auto exit_rect = SDL_FRect {
+        exit_pos.x, exit_pos.y, kCellDimensionsF, kCellDimensionsF
+    };
+    SDL_RenderFillRectF(renderer, &exit_rect);
 }
 
 void DamnedCaverns::HandleEvents() {

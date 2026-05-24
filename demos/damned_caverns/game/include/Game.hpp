@@ -1,15 +1,10 @@
-#include <SDL2/SDL.h>
-#include <SDL_image.h>
-#include <SDL_ttf.h>
+#pragma once
 
 #include "IEngineAPI.hpp"
 #include "game/IGame.hpp"
 #include "renderer/Renderer.hpp"
 
-#include "timer/Timer.hpp"
-
 #include <string>
-#include <array>
 
 class Game : public Engine2D::IGame {
 public:
