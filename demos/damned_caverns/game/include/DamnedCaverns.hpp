@@ -12,25 +12,36 @@
 
 // Player
 struct Player {
-    Vec2<float> direction_; // -1.f, 0.f, 1.f
-    Coords_t position_;
-    float speed_;
+    Vec2<int> direction_; // El jugador siempre tendrá una dirección
+    ColRow_t colrow_; // Posición top left del cuadrado
 
-    void Update(float dt, const Grid& grid) {
-        const Uint8* keyboard_state = SDL_GetKeyboardState(nullptr);
+    void TryMove(const Grid& grid, int amount) {
+        const Vec2<int> next_colrow {
+            colrow_.x + direction_.x * amount,
+            colrow_.y + direction_.y * amount
+        };
 
-        direction_ = {0, 0};
+        const auto next_position = grid.ColRowToCoords(next_colrow);
 
-        if (keyboard_state[SDL_SCANCODE_W]) direction_.y -= 1.f;
-        if (keyboard_state[SDL_SCANCODE_S]) direction_.y += 1.f;
-        if (keyboard_state[SDL_SCANCODE_A]) direction_.x -= 1.f;
-        if (keyboard_state[SDL_SCANCODE_D]) direction_.x += 1.f;
-
-        const auto movement = direction_ * speed_ * dt;
-        Coords_t next_position = position_ + movement;
         if (grid.AreCoordsWalkable(next_position)) {
-            position_ = next_position;
+            colrow_ = next_colrow;
         }
+    }
+
+    void MoveForward(const Grid& grid) {
+        TryMove(grid, 1);
+    }
+
+    void MoveBackward(const Grid& grid) {
+        TryMove(grid, -1);
+    }
+
+    void RotateLeft() {
+        direction_ = { direction_.y, -direction_.x };
+    }
+
+    void RotateRight() {
+        direction_ = { -direction_.y, direction_.x };
     }
 };
 

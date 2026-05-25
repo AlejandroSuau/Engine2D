@@ -15,8 +15,7 @@ DamnedCaverns::DamnedCaverns(int window_width, int window_height)
     , grid_({0, 0}, kMapColumnCount, kMapRowCount, kCellDimensions)
     , player_{
         .direction_ = {-1, 0},
-        .position_ = grid_.ColRowToCoords(kPlayerStartColRow),
-        .speed_ = 100.0f
+        .colrow_ = kPlayerStartColRow
     }
 {
     std::cout << "Initializing Damned Caverns..." << std::endl;
@@ -96,7 +95,6 @@ void DamnedCaverns::CoreLoop() {
 
 void DamnedCaverns::Update(float dt) {
     elapsed_time_ += dt;
-    player_.Update(dt, grid_);
 }
 
 void DamnedCaverns::Render() {
@@ -134,11 +132,25 @@ void DamnedCaverns::RenderVisualHelper() {
     }
 
     // Render Player
+    const auto player_position = grid_.ColRowToCoords(player_.colrow_);
     SDL_SetRenderDrawColor(renderer_.get(), 0, 0, 255, 255);
     const SDL_FRect player_rect {
-        player_.position_.x, player_.position_.y, kPlayerDimensions, kPlayerDimensions
+        player_position.x, player_position.y, kPlayerDimensions, kPlayerDimensions
     };
     SDL_RenderFillRectF(renderer, &player_rect);
+    
+    // Render Player Direction
+    const auto player_center_x = player_position.x + kPlayerDimensions * 0.5f;
+    const auto player_center_y = player_position.y + kPlayerDimensions * 0.5f;
+
+    SDL_SetRenderDrawColor(renderer_.get(), 255, 255, 0, 255);
+    SDL_RenderDrawLineF(
+        renderer,
+        player_center_x,
+        player_center_y,
+        player_center_x + player_.direction_.x * kCellDimensionsF,
+        player_center_y + player_.direction_.y * kCellDimensionsF
+    );
 
     // Render Monster
     SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
@@ -163,6 +175,29 @@ void DamnedCaverns::HandleEvents() {
         if (event.type == SDL_QUIT) {
             Shutdown();
             return;
+        }
+
+        if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+            switch (event.key.keysym.scancode) {
+                case SDL_SCANCODE_W:
+                    player_.MoveForward(grid_);
+                    break;
+
+                case SDL_SCANCODE_S:
+                    player_.MoveBackward(grid_);
+                    break;
+
+                case SDL_SCANCODE_A:
+                    player_.RotateLeft();
+                    break;
+
+                case SDL_SCANCODE_D:
+                    player_.RotateRight();
+                    break;
+
+                default:
+                    break;
+            }
         }
     }
 }

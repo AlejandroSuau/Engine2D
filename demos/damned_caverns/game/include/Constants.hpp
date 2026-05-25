@@ -14,7 +14,7 @@ static constexpr uint64_t kFixedTimeStep = 1000 / kTargetFPS;
 static constexpr uint64_t kFrameDelay = 1000 / kTargetFPS; // Frame delay en milliseconds
 
 // Map
-static const float kPlayerDimensions = 20.f;
+static const float kPlayerDimensions = 40.f;
 static const Vec2<int> kPlayerStartColRow {2, 7};
 static const Vec2<int> kMonsterStartColRow {5, 4};
 static const Vec2<int> kExitColRow {8, 8};
