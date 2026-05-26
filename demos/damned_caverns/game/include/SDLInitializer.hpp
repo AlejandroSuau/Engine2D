@@ -12,7 +12,7 @@
 class SDLInitializer {
 public:
     SDLInitializer() {
-        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
             SDL_Log("Failed to init SDL: %s", SDL_GetError());
             throw std::runtime_error("Failed to init SDL");
         }
@@ -41,6 +41,7 @@ public:
             SDL_Log("Failed to init SDL Mixer: %s", Mix_GetError());
             throw std::runtime_error("Failed to init SDL Mixer");
         }
+        Mix_AllocateChannels(16);
     }
 
     ~SDLMixerInitializer() { Mix_CloseAudio(); }

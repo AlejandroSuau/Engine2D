@@ -5,6 +5,7 @@
 #include "SDLInitializer.hpp"
 #include "Constants.hpp"
 #include "Grid.hpp"
+#include "AudioManager.hpp"
 
 #include <memory>
 #include <algorithm>
@@ -14,8 +15,8 @@
 struct Player {
     Vec2<int> direction_; // El jugador siempre tendrá una dirección
     ColRow_t colrow_; // Posición top left del cuadrado
-
-    void TryMove(const Grid& grid, int amount) {
+    
+    bool TryMove(const Grid& grid, int amount) {
         const Vec2<int> next_colrow {
             colrow_.x + direction_.x * amount,
             colrow_.y + direction_.y * amount
@@ -25,15 +26,18 @@ struct Player {
 
         if (grid.AreCoordsWalkable(next_position)) {
             colrow_ = next_colrow;
+            return true;
+        } else {
+            return false;
         }
     }
 
-    void MoveForward(const Grid& grid) {
-        TryMove(grid, 1);
+    bool MoveForward(const Grid& grid) {
+        return TryMove(grid, 1);
     }
 
-    void MoveBackward(const Grid& grid) {
-        TryMove(grid, -1);
+    bool MoveBackward(const Grid& grid) {
+        return TryMove(grid, -1);
     }
 
     void RotateLeft() {
@@ -43,6 +47,18 @@ struct Player {
     void RotateRight() {
         direction_ = { -direction_.y, direction_.x };
     }
+};
+
+// Monsters
+struct Monster {
+    ColRow_t colrow_;
+};
+
+// Game State
+enum class GameState {
+    Playing,
+    Victory,
+    Defeat
 };
 
 // Game
@@ -66,8 +82,19 @@ private:
     float elapsed_time_ = 0.0f;
     bool is_running_;
 
+    AudioManager audio_manager_;
+    GameState game_state_;
     Grid grid_;
     Player player_;
+    Monster monster_;
+    
+    int monster_snore_channel_ = -1;
+    int waterfall_channel_ = -1;
+
+    bool show_visual_helper_ = true;
+
+    void ResetGame();
+    void StartAmbientLoops();
 
     void CreateWindow();
     void SetMapData();
@@ -80,4 +107,9 @@ private:
     void Shutdown();    
 
     void RenderVisualHelper();
+    
+    void MoveMonsterRandomly();
+    void TriggerVictory();
+    void TriggerDefeat();
+    void CheckGameOver();
 };

@@ -6,7 +6,6 @@
 #include <array>
 #include <optional>
 
-// glm vec2
 using ColRow_t = Vec2<int>;
 using Coords_t = Vec2<float>;
 

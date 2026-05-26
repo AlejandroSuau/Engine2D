@@ -3,6 +3,7 @@ add_library(DamnedCavernsShowcaseCore STATIC
     game/src/Game.cpp
     game/src/DamnedCaverns.cpp
     game/src/Grid.cpp
+    game/src/AudioManager.cpp
 )
 
 target_include_directories(DamnedCavernsShowcaseCore
@@ -18,13 +19,14 @@ target_link_libraries(DamnedCavernsShowcaseCore
 add_executable(DamnedCavernsShowcase game/src/main.cpp)
 target_link_libraries(DamnedCavernsShowcase PRIVATE DamnedCavernsShowcaseCore)
 
-# Copia SIEMPRE los assets al lado del ejecutable al compilar
-add_custom_target(CopyDamnedCavernsAssets ALL
+# Copia los assets siempre al lado real del ejecutable
+add_custom_command(TARGET DamnedCavernsShowcase POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/assets
-            ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/assets
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:DamnedCavernsShowcase>/assets"
     COMMENT "Copying DamnedCavernsShowcase assets"
 )
+
 # DLLs de SDL en Windows
 if (WIN32)
     add_custom_command(TARGET DamnedCavernsShowcase POST_BUILD
