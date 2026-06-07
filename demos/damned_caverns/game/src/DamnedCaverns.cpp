@@ -72,9 +72,8 @@ void DamnedCaverns::Init() {
         throw std::runtime_error("Failed to load assets");
     }
 
-    monster_snore_channel_ = audio_manager_.PlayLoop(SoundId::MonsterSnore);
-    waterfall_channel_ = audio_manager_.PlayLoop(SoundId::Waterfall);
-
+    monster_snore_channel_ = audio_manager_.PlayLoop(SoundId::MonsterSnore, 70);
+    waterfall_channel_ = audio_manager_.PlayLoop(SoundId::Waterfall, 60);
 
     is_running_ = true;
     SDL_ShowWindow(window_.get());
@@ -109,6 +108,8 @@ void DamnedCaverns::CoreLoop() {
 
 void DamnedCaverns::Update(float dt) {
     elapsed_time_ += dt;
+
+    audio_manager_.Update(dt);
 
     if (game_state_ != GameState::Playing) {
         return;
@@ -253,10 +254,12 @@ void DamnedCaverns::HandleEvents() {
 
             if (did_move) {
                 if (did_player_face_wall) {
-                    audio_manager_.PlayOneShot(SoundId::WallHit);
+                    audio_manager_.PlayOneShot(SoundId::WallHit, 90);
                     MoveMonsterRandomly();
                 } else {
-                    audio_manager_.PlayOneShot(SoundId::PlayerStep);
+                    audio_manager_.PlayOneShot(SoundId::PlayerStep, 75);
+                    audio_manager_.PlayDelayedOneShot(SoundId::PlayerStep, 0.10f, 30);
+                    audio_manager_.PlayDelayedOneShot(SoundId::PlayerStep, 0.20f, 10);
                 }
                 CheckGameOver();
             }
@@ -285,7 +288,8 @@ void DamnedCaverns::MoveMonsterRandomly() {
 
         if (grid_.AreColRowWalkable(next_colrow)) {
             monster_.colrow_ = next_colrow;
-            audio_manager_.PlayOneShot(SoundId::MonsterStep);
+            audio_manager_.PlayOneShot(SoundId::MonsterStep, 80);
+            audio_manager_.PlayDelayedOneShot(SoundId::MonsterStep, 0.14f, 28);
             return;
         }
     }
@@ -301,14 +305,18 @@ void DamnedCaverns::CheckGameOver() {
 
 void DamnedCaverns::TriggerVictory() {
     audio_manager_.StopAll();
-    audio_manager_.PlayOneShot(SoundId::Victory);
+    audio_manager_.PlayOneShot(SoundId::Victory, 80);
     game_state_ = GameState::Victory;
 }
 
 void DamnedCaverns::TriggerDefeat() {
     audio_manager_.StopAll();
-    audio_manager_.PlayOneShot(SoundId::MonsterEat);
-    audio_manager_.PlayOneShot(SoundId::Defeat);
+    audio_manager_.PlayOneShot(SoundId::MonsterEat, 60);
+    audio_manager_.PlayDelayedOneShot(SoundId::MonsterEat, 0.30f, 45);
+    audio_manager_.PlayDelayedOneShot(SoundId::MonsterEat, 0.80f, 24);
+    audio_manager_.PlayDelayedOneShot(SoundId::MonsterEat, 1.1f, 10);
+
+    audio_manager_.PlayDelayedOneShot(SoundId::Defeat, 1.1f, 80);
     game_state_ = GameState::Defeat;
 }
 
@@ -317,8 +325,8 @@ void DamnedCaverns::Shutdown() {
 }
 
 void DamnedCaverns::StartAmbientLoops() {
-    monster_snore_channel_ = audio_manager_.PlayLoop(SoundId::MonsterSnore);
-    waterfall_channel_ = audio_manager_.PlayLoop(SoundId::Waterfall);
+    monster_snore_channel_ = audio_manager_.PlayLoop(SoundId::MonsterSnore, 70);
+    waterfall_channel_ = audio_manager_.PlayLoop(SoundId::Waterfall, 60);
 
     audio_manager_.UpdateSpatialChannel(
         monster_snore_channel_,

@@ -57,25 +57,59 @@ void AudioManager::Shutdown() {
     }
 }
 
+void AudioManager::Update(float dt) {
+    for (auto it = pending_sounds_.begin(); it != pending_sounds_.end(); ) {
+        it->remainingSeconds -= dt;
+
+        if (it->remainingSeconds <= 0.0f) {
+            PlayOneShot(it->id, it->volume);
+            it = pending_sounds_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 Mix_Chunk* AudioManager::GetChunk(SoundId id) const {
     return chunks_[ToIndex(id)];
 }
+
 void AudioManager::PlayOneShot(SoundId id) {
+    PlayOneShot(id, MIX_MAX_VOLUME);
+}
+
+void AudioManager::PlayOneShot(SoundId id, int volume) {
     Mix_Chunk* chunk = GetChunk(id);
     if (!chunk) {
         return;
     }
 
-    Mix_PlayChannel(-1, chunk, 0);
+    const int channel = Mix_PlayChannel(-1, chunk, 0);
+    if (channel >= 0) {
+        Mix_Volume(channel, std::clamp(volume, 0, MIX_MAX_VOLUME));
+    }
 }
 
-int AudioManager::PlayLoop(SoundId id) {
+void AudioManager::PlayDelayedOneShot(SoundId id, float delaySeconds, int volume) {
+    pending_sounds_.push_back(PendingSound{
+        id,
+        delaySeconds,
+        std::clamp(volume, 0, MIX_MAX_VOLUME)
+    });
+}
+
+int AudioManager::PlayLoop(SoundId id, int volume) {
     Mix_Chunk* chunk = GetChunk(id);
     if (!chunk) {
         return -1;
     }
 
-    return Mix_PlayChannel(-1, chunk, -1);
+    const int channel = Mix_PlayChannel(-1, chunk, -1);
+    if (channel >= 0) {
+        Mix_Volume(channel, std::clamp(volume, 0, MIX_MAX_VOLUME));
+    }
+
+    return channel;
 }
 
 void AudioManager::StopChannel(int channel) {
@@ -88,6 +122,8 @@ void AudioManager::StopAll() {
     Mix_HaltChannel(-1);
 }
 
+
+
 void AudioManager::UpdateSpatialChannel(
     int channel,
     ColRow_t listener,
@@ -98,17 +134,21 @@ void AudioManager::UpdateSpatialChannel(
         return;
     }
 
-    const float dx = static_cast<float>(source.x - listener.x);
-    const float dy = static_cast<float>(source.y - listener.y);
-
+    // Vector desde el jugador hasta la fuente sonora.
+    // Puesto que las paredes no bloquean sonido, basta con la distancia directa
+    // entre casillas
+    const auto dx = static_cast<float>(source.x - listener.x);
+    const auto dy = static_cast<float>(source.y - listener.y);
     const float distance_cells = Length(dx, dy);
+
+    // Se normaliza la distancia real del mapa a un rango de 0 a 1
     const float normalized_distance = std::clamp(
         distance_cells / static_cast<float>(kMaxDistanceCells),
         0.0f,
         1.0f
     );
 
-    const Uint8 sdl_distance = static_cast<Uint8>(
+    const auto sdl_distance = static_cast<Uint8>(
         std::clamp(
             static_cast<int>(normalized_distance * kMaxDistance),
             kMinDistance,
@@ -116,21 +156,30 @@ void AudioManager::UpdateSpatialChannel(
         )
     );
 
-    const float forward_x = static_cast<float>(listenerDir.x);
-    const float forward_y = static_cast<float>(listenerDir.y);
+    // Dirección hacia la que mira el jugador (normalizada cardinal)
+    const auto forward_x = static_cast<float>(listenerDir.x);
+    const auto forward_y = static_cast<float>(listenerDir.y);
 
     float angle_degrees = 0.0f;
 
+    // Si jugador y fuente están en la misma casilla no hay dirección, se 
+    // deja el ángulo a 0 y se mantiene distancia mínima
     if (distance_cells > 0.001f) {
+        // Vector normalizado hacia la fuente sonora
         const float source_x = dx / distance_cells;
         const float source_y = dy / distance_cells;
 
+        // Converte coordenadas del mapa a coordenadas relativas al jugador
         const float right_x = -forward_y;
         const float right_y = forward_x;
 
+        // Proyecciones de la fuente respecto al eje fronntal y lateral del jugador.
+        // forward_dot > 0 = fuente delante
+        // right_dot > 0 = fuente a la derecha
         const float forward_dot = forward_x * source_x + forward_y * source_y;
         const float right_dot = right_x * source_x + right_y * source_y;
 
+        // Ángulo relativo: 0 delante, 90 derecha, 180 detrás, 270 izquierda
         angle_degrees = std::atan2(right_dot, forward_dot) * 180.0f / 3.14159265f;
 
         if (angle_degrees < 0.0f) {
@@ -138,6 +187,7 @@ void AudioManager::UpdateSpatialChannel(
         }
     }
 
+    // Panning + atenuación por distancia
     Mix_SetPosition(
         channel,
         static_cast<Sint16>(angle_degrees),

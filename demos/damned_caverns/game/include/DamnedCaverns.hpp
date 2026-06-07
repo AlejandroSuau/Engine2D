@@ -91,7 +91,7 @@ private:
     int monster_snore_channel_ = -1;
     int waterfall_channel_ = -1;
 
-    bool show_visual_helper_ = true;
+    bool show_visual_helper_ = false;
 
     void ResetGame();
     void StartAmbientLoops();
