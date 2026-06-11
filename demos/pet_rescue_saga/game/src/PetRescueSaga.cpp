@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <string>
 #include <iostream>
-#include <algorithm>
 
 PetRescueSaga::PetRescueSaga(int window_width, int window_height)
     : sdl_initializer_(std::make_unique<SDLInitializer>())
@@ -13,7 +12,8 @@ PetRescueSaga::PetRescueSaga(int window_width, int window_height)
     , window_height_(window_height)
     , window_(nullptr, SDL_DestroyWindow)
     , renderer_(nullptr, SDL_DestroyRenderer)
-    , is_running_(false) {
+    , is_running_(false)
+    , grid_(kGridRowCount, kGridColumnCount) {
     CreateWindow();
 }
 
@@ -86,6 +86,16 @@ void PetRescueSaga::Render() {
     SDL_RenderClear(renderer);
 
     // Render
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    float current_x = 0.f;
+    float current_y = 0.f;
+    const auto& cells = grid_.GetCells();
+    for (const auto& cell : cells) {
+        current_x = static_cast<float>(cell.col) * kCellDimensionsF;
+        current_y = static_cast<float>(cell.row) * kCellDimensionsF;
+        SDL_FRect r {current_x, current_y, kCellDimensionsF, kCellDimensionsF};
+        SDL_RenderDrawRectF(renderer, &r);
+    }
 
     // End Render
     SDL_RenderPresent(renderer);

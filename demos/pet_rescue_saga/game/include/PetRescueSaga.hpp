@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 
 #include "SDLInitializer.hpp"
+#include "Grid.hpp"
 
 #include <memory>
 
@@ -24,6 +25,8 @@ private:
 
     float elapsed_time_ = 0.0f;
     bool is_running_;
+
+    Grid grid_;
 
     void ResetGame();
 

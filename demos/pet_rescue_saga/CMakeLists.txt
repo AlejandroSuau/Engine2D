@@ -14,7 +14,8 @@ target_link_libraries(PetRescueSagaShowcaseCore
     PUBLIC Engine2D
 )
 
-add_executable(PetRescueSagaShowcase game/src/main.cpp)
+add_executable(PetRescueSagaShowcase game/src/main.cpp
+        game/include/Block.hpp)
 target_link_libraries(PetRescueSagaShowcase PRIVATE PetRescueSagaShowcaseCore)
 
 # Copia los assets siempre al lado real del ejecutable

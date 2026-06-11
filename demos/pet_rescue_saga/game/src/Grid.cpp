@@ -2,6 +2,50 @@
 
 #include <assert.h>
 #include <algorithm>
+
+Grid::Grid(int row_count, int col_count)
+    : row_count_(row_count)
+    , col_count_(col_count) {
+    Init();
+}
+
+int Grid::GetColCount() const {
+    return col_count_;
+}
+
+int Grid::GetRowCount() const {
+    return row_count_;
+}
+
+const Grid::Cells_t& Grid::GetCells() const {
+    return cells_;
+}
+
+void Grid::Init() {
+    const auto cell_count =
+        static_cast<std::size_t>(col_count_) *
+        static_cast<std::size_t>(row_count_);
+    cells_.reserve(cell_count);
+
+    std::size_t i = 0;
+    for (int row = 0; row < row_count_; ++row) {
+        for (int col = 0; col < col_count_; ++col) {
+            cells_.emplace_back(
+                Cell{ .grid_index_ = i, .row = row, .col = col});
+            ++i;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
 /*
 Grid::Grid(
     const Coords_t origin,

@@ -2,8 +2,7 @@
 
 #include "Vec2.hpp"
 
-#include <vector>
-#include <array>
+#include <cstdint>
 
 static constexpr int SCREEN_WIDTH = 400;
 static constexpr int SCREEN_HEIGHT = 400;
@@ -13,8 +12,8 @@ static constexpr uint64_t kTargetFPS = 60;
 static constexpr uint64_t kFixedTimeStep = 1000 / kTargetFPS;
 static constexpr uint64_t kFrameDelay = 1000 / kTargetFPS; // Frame delay en milliseconds
 
-// Map
-static const std::size_t kMapColumnCount = 10;
-static const std::size_t kMapRowCount = 10;
+// Grid
+static const std::size_t kGridColumnCount = 10;
+static const std::size_t kGridRowCount = 10;
 static const std::size_t kCellDimensions = 40;
 static const float kCellDimensionsF = static_cast<float>(kCellDimensions);

@@ -1,13 +1,42 @@
 #pragma once
 
 #include "Vec2.hpp"
+#include "Block.hpp"
 
 #include <vector>
-#include <array>
 #include <optional>
 
 using ColRow_t = Vec2<int>;
 using Coords_t = Vec2<float>;
+
+class Grid {
+public:
+    struct Cell {
+        std::size_t grid_index_{};
+        int row{};
+        int col{};
+        std::optional<Block> block{std::nullopt};
+    };
+    using Cells_t = std::vector<Cell>;
+
+    Grid(int row_count, int col_count);
+
+    [[nodiscard]] int GetRowCount() const;
+    [[nodiscard]] int GetColCount() const;
+
+    [[nodiscard]] const Cells_t& GetCells() const;
+
+private:
+    const int row_count_;
+    const int col_count_;
+
+    Cells_t cells_;
+
+    void Init();
+};
+
+
+
 /*
 class Grid {
 public:
