@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 project(Engine2D VERSION 0.1 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -36,8 +38,12 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
     GIT_TAG release-2.8.0
 )
-set(SDL2MIXER_VENDORED ON)
-set(SDL2MIXER_OPUS OFF)
+
+set(SDL2MIXER_VENDORED ON CACHE BOOL "" FORCE)
+set(SDL2MIXER_OPUS OFF CACHE BOOL "" FORCE)
+set(SDL2MIXER_SAMPLES OFF CACHE BOOL "" FORCE)
+set(SDL2MIXER_INSTALL OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(SDL2_mixer)
 
 FetchContent_Declare(
@@ -45,6 +51,12 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
     GIT_TAG release-2.22.0
 )
+
+set(SDL2TTF_VENDORED ON CACHE BOOL "" FORCE)
+set(SDL2TTF_HARFBUZZ OFF CACHE BOOL "" FORCE)
+set(SDL2TTF_SAMPLES OFF CACHE BOOL "" FORCE)
+set(SDL2TTF_INSTALL OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(SDL2_ttf)
 
 FetchContent_Declare(
@@ -85,7 +97,8 @@ target_link_libraries(Engine2D
 )
 
 if (WIN32)
-    target_link_libraries(Engine2D PUBLIC SDL2::SDL2main opengl32)
+    target_compile_definitions(Engine2D PUBLIC SDL_MAIN_HANDLED)
+    target_link_libraries(Engine2D PUBLIC opengl32)
 endif()
 
 if (APPLE)

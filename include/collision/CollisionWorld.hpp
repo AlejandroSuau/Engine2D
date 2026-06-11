@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <span>
+#include <algorithm>
 
 // This is a O(n^2) system in worst case. May fix it later.
 

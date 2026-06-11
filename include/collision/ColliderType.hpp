@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "math/Vec2.hpp"
 
 namespace Engine2D {
