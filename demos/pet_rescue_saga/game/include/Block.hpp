@@ -14,4 +14,6 @@ enum class EColor {
 struct Block {
     EType type_;
     EColor color_;
+    float x_;
+    float y_;
 };

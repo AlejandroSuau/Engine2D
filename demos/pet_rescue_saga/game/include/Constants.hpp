@@ -2,7 +2,8 @@
 
 #include "Vec2.hpp"
 
-#include <cstdint>
+using ColRow_t = Vec2<int>;
+using Coords_t = Vec2<float>;
 
 static constexpr int SCREEN_WIDTH = 400;
 static constexpr int SCREEN_HEIGHT = 400;

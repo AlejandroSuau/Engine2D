@@ -5,27 +5,38 @@
 
 Grid::Grid(int row_count, int col_count)
     : row_count_(row_count)
-    , col_count_(col_count) {
+    , col_count_(col_count)
+    , cell_count_(row_count * col_count) {
     Init();
 }
 
-int Grid::GetColCount() const {
-    return col_count_;
-}
-
-int Grid::GetRowCount() const {
+int Grid::RowCount() const {
     return row_count_;
 }
 
-const Grid::Cells_t& Grid::GetCells() const {
+int Grid::ColCount() const {
+    return col_count_;
+}
+
+std::size_t Grid::FromColRowToIndex(const ColRow_t& col_row) const {
+    return col_row.y * col_count_ + col_row.x;
+}
+
+ColRow_t Grid::IndexToColRow(std::size_t index) const {
+    return {static_cast<int>(index % col_count_),
+            static_cast<int>(index / col_count_)};
+}
+
+const Grid::Cells_t& Grid::Cells() const {
     return cells_;
 }
 
+int Grid::CellCount() const {
+    return cell_count_;
+}
+
 void Grid::Init() {
-    const auto cell_count =
-        static_cast<std::size_t>(col_count_) *
-        static_cast<std::size_t>(row_count_);
-    cells_.reserve(cell_count);
+    cells_.reserve(static_cast<std::size_t>(cell_count_));
 
     std::size_t i = 0;
     for (int row = 0; row < row_count_; ++row) {

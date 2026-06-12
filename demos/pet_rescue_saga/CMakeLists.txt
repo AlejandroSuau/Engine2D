@@ -15,7 +15,9 @@ target_link_libraries(PetRescueSagaShowcaseCore
 )
 
 add_executable(PetRescueSagaShowcase game/src/main.cpp
-        game/include/Block.hpp)
+        game/include/Block.hpp
+        game/include/BlocksMover.hpp
+        game/src/BlocksMover.cpp)
 target_link_libraries(PetRescueSagaShowcase PRIVATE PetRescueSagaShowcaseCore)
 
 # Copia los assets siempre al lado real del ejecutable

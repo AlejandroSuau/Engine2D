@@ -89,7 +89,7 @@ void PetRescueSaga::Render() {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     float current_x = 0.f;
     float current_y = 0.f;
-    const auto& cells = grid_.GetCells();
+    const auto& cells = grid_.Cells();
     for (const auto& cell : cells) {
         current_x = static_cast<float>(cell.col) * kCellDimensionsF;
         current_y = static_cast<float>(cell.row) * kCellDimensionsF;

@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Vec2.hpp"
 #include "Block.hpp"
 
 #include <vector>
 #include <optional>
 
-using ColRow_t = Vec2<int>;
-using Coords_t = Vec2<float>;
+#include "Constants.hpp"
 
 class Grid {
 public:
@@ -21,14 +19,19 @@ public:
 
     Grid(int row_count, int col_count);
 
-    [[nodiscard]] int GetRowCount() const;
-    [[nodiscard]] int GetColCount() const;
+    [[nodiscard]] int RowCount() const;
+    [[nodiscard]] int ColCount() const;
+    [[nodiscard]] int CellCount() const;
 
-    [[nodiscard]] const Cells_t& GetCells() const;
+    [[nodiscard]] std::size_t FromColRowToIndex(const ColRow_t& col_row) const;
+    [[nodiscard]] ColRow_t IndexToColRow(std::size_t index) const;
+
+    [[nodiscard]] const Cells_t& Cells() const;
 
 private:
     const int row_count_;
     const int col_count_;
+    const int cell_count_;
 
     Cells_t cells_;
 
