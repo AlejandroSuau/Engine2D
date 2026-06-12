@@ -78,6 +78,7 @@ void PetRescueSaga::CoreLoop() {
 
 void PetRescueSaga::Update(float dt) {
     elapsed_time_ += dt;
+    grid_.Update(dt);
 }
 
 void PetRescueSaga::Render() {
@@ -86,80 +87,28 @@ void PetRescueSaga::Render() {
     SDL_RenderClear(renderer);
 
     // Render
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    float current_x = 0.f;
-    float current_y = 0.f;
+    // Grid blocks
     const auto& cells = grid_.Cells();
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     for (const auto& cell : cells) {
-        current_x = static_cast<float>(cell.col) * kCellDimensionsF;
-        current_y = static_cast<float>(cell.row) * kCellDimensionsF;
-        SDL_FRect r {current_x, current_y, kCellDimensionsF, kCellDimensionsF};
-        SDL_RenderDrawRectF(renderer, &r);
+        if (cell.block) {
+            SDL_FRect rect_block {
+                cell.block->position_.x, cell.block->position_.y, kCellDimensionsF, kCellDimensionsF};
+            SDL_RenderFillRectF(renderer, &rect_block);
+        }
+    }
+
+    // Grid cells
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 100);
+    for (const auto& cell : cells) {
+        SDL_FRect rect_cell {
+            cell.top_left_coords_.x, cell.top_left_coords_.y, kCellDimensionsF, kCellDimensionsF};
+        SDL_RenderDrawRectF(renderer, &rect_cell);
     }
 
     // End Render
     SDL_RenderPresent(renderer);
 }
-
-/*void PetRescueSaga::RenderVisualHelper() {
-    auto* renderer = renderer_.get();
-    // Render cells
-    const auto& cells = grid_.Cells();
-    SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
-    for (const auto& cell : cells) {
-        const SDL_FRect rect {
-            cell.top_left_.x,
-            cell.top_left_.y,
-            kCellDimensionsF,
-            kCellDimensionsF
-        };
-
-        if (cell.is_walkable_) {
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        } else {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        }
-
-        SDL_RenderFillRectF(renderer, &rect);
-    }
-
-    // Render Player
-    const auto player_position = grid_.ColRowToCoords(player_.colrow_);
-    SDL_SetRenderDrawColor(renderer_.get(), 0, 0, 255, 255);
-    const SDL_FRect player_rect {
-        player_position.x, player_position.y, kPlayerDimensions, kPlayerDimensions
-    };
-    SDL_RenderFillRectF(renderer, &player_rect);
-    
-    // Render Player Direction
-    const auto player_center_x = player_position.x + kPlayerDimensions * 0.5f;
-    const auto player_center_y = player_position.y + kPlayerDimensions * 0.5f;
-
-    SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
-    SDL_RenderDrawLineF(
-        renderer,
-        player_center_x,
-        player_center_y,
-        player_center_x + player_.direction_.x * kCellDimensionsF,
-        player_center_y + player_.direction_.y * kCellDimensionsF
-    );
-
-    // Render Monster
-    SDL_SetRenderDrawColor(renderer_.get(), 255, 0, 0, 255);
-    const auto monster_pos = grid_.ColRowToCoords(monster_.colrow_);
-    const auto monster_rect = SDL_FRect {
-        monster_pos.x, monster_pos.y, kCellDimensionsF, kCellDimensionsF
-    };
-    SDL_RenderFillRectF(renderer, &monster_rect);
-
-    // Render Exit
-    SDL_SetRenderDrawColor(renderer_.get(), 0, 255, 0, 255);
-    const auto exit_pos = grid_.ColRowToCoords(kExitColRow);
-    const auto exit_rect = SDL_FRect {
-        exit_pos.x, exit_pos.y, kCellDimensionsF, kCellDimensionsF
-    };
-    SDL_RenderFillRectF(renderer, &exit_rect);
-}*/
 
 void PetRescueSaga::HandleEvents() {
     SDL_Event event;
@@ -168,7 +117,52 @@ void PetRescueSaga::HandleEvents() {
             Shutdown();
             return;
         }
+
+        if (grid_.IsAnyBlockMoving()) {
+            return;
+        }
+
+        if (event.type == SDL_MOUSEBUTTONDOWN &&
+            event.button.button == SDL_BUTTON_LEFT) {
+            const Vec2<float> click_coords {
+                static_cast<float>(event.button.x),
+                static_cast<float>(event.button.y)};
+            HandleLeftMouseButtonClick(click_coords);
+        }
     }
+}
+
+void PetRescueSaga::HandleLeftMouseButtonClick(const Vec2<float>& coords) {
+    auto* cell = grid_.GetCell(grid_.CoordsToColRow(coords));
+    if (!cell) {
+        return;
+    }
+
+    if (cell->block) {
+        auto block_destination = cell->block->position_;
+        const auto cell_col_row = cell->col_row_;
+        cell->block.reset();
+
+        // Everything above goes down
+        for (auto row = cell_col_row.y; row >= 0; --row) {
+            auto* current_cell = grid_.GetCell(ColRow_t{cell_col_row.x, row});
+            // Always should be cell up
+            if (current_cell->block) {
+                current_cell->block->destination_ = block_destination;
+                current_cell->block->is_moving_.y = true;
+                block_destination = current_cell->block->position_;
+
+                cell->block = std::move(current_cell->block);
+                current_cell->block.reset();
+                cell = current_cell;
+            }
+        }
+
+    }
+
+    // Which block?
+    // Update the grid if something destroyed
+
 }
 
 void PetRescueSaga::CheckGameOver() {

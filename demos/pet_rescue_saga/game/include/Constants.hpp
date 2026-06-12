@@ -2,6 +2,8 @@
 
 #include "Vec2.hpp"
 
+#include <cstdint>
+
 using ColRow_t = Vec2<int>;
 using Coords_t = Vec2<float>;
 
@@ -18,3 +20,9 @@ static const std::size_t kGridColumnCount = 10;
 static const std::size_t kGridRowCount = 10;
 static const std::size_t kCellDimensions = 40;
 static const float kCellDimensionsF = static_cast<float>(kCellDimensions);
+
+// Block
+static constexpr float kBlockVelocityX = 100.f;
+static constexpr float kBlockVelocityY = 10.f;
+static constexpr float kBlockAccelerationX = 100.f;
+static constexpr float kBlockAccelerationY = 300.f;

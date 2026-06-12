@@ -6,7 +6,9 @@
 Grid::Grid(int row_count, int col_count)
     : row_count_(row_count)
     , col_count_(col_count)
-    , cell_count_(row_count * col_count) {
+    , cell_count_(row_count * col_count)
+    , cells_{}
+    , is_any_block_moving_(false) {
     Init();
 }
 
@@ -18,13 +20,23 @@ int Grid::ColCount() const {
     return col_count_;
 }
 
-std::size_t Grid::FromColRowToIndex(const ColRow_t& col_row) const {
-    return col_row.y * col_count_ + col_row.x;
-}
-
 ColRow_t Grid::IndexToColRow(std::size_t index) const {
     return {static_cast<int>(index % col_count_),
             static_cast<int>(index / col_count_)};
+}
+
+std::size_t Grid::ColRowToIndex(const ColRow_t& col_row) const {
+    return col_row.y * col_count_ + col_row.x;
+}
+
+std::size_t Grid::CoordsToIndex(const Coords_t& coords) const {
+    const auto col_row = CoordsToColRow(coords);
+    return ColRowToIndex(col_row);
+}
+
+ColRow_t Grid::CoordsToColRow(const Coords_t& coords) const {
+    return {static_cast<int>(coords.x / kCellDimensionsF),
+             static_cast<int>(coords.y / kCellDimensionsF)};
 }
 
 const Grid::Cells_t& Grid::Cells() const {
@@ -38,16 +50,78 @@ int Grid::CellCount() const {
 void Grid::Init() {
     cells_.reserve(static_cast<std::size_t>(cell_count_));
 
+    Vec2<float> cell_position;
     std::size_t i = 0;
     for (int row = 0; row < row_count_; ++row) {
+        cell_position.x = 0;
         for (int col = 0; col < col_count_; ++col) {
             cells_.emplace_back(
-                Cell{ .grid_index_ = i, .row = row, .col = col});
+                Cell{
+                    .grid_index_ = i,
+                    .col_row_ = {col, row},
+                    .top_left_coords_ = cell_position,
+                });
+
+            // TO REMOVE
+            if (col == 0) {
+                cells_[i].block = Block(
+                    EType::NORMAL,
+                    EColor::WHITE,
+                    cell_position,
+                    Vec2<float>(kBlockVelocityX, kBlockVelocityY),
+                    Vec2<float>(kBlockAccelerationX, kBlockAccelerationY),
+                    Vec2<bool>(false, false),
+                    {}
+                );
+            }
+            // TO REMOVE
+
+            cell_position.x += kCellDimensionsF;
             ++i;
+        }
+        cell_position.y += kCellDimensionsF;
+    }
+}
+
+void Grid::Update(float dt) {
+    is_any_block_moving_ = false;
+    for (auto& cell : cells_) {
+        if (cell.block) {
+            cell.block->Update(dt);
+            is_any_block_moving_ |= (
+                cell.block->is_moving_.x ||
+                cell.block->is_moving_.y);
         }
     }
 }
 
+bool Grid::IsAnyBlockMoving() const noexcept {
+    return is_any_block_moving_;
+}
+
+Grid::Cell* Grid::GetCell(Coords_t coords) noexcept {
+    return GetCellImpl(*this, coords);
+}
+
+Grid::Cell* Grid::GetCell(ColRow_t colrow) noexcept {
+    return GetCellImpl(*this, colrow);
+}
+
+Grid::Cell* Grid::GetCell(std::size_t index) noexcept {
+    return GetCellImpl(*this, index);
+}
+
+const Grid::Cell* Grid::GetCell(Coords_t coords) const noexcept {
+    return GetCellImpl(*this, coords);
+}
+
+const Grid::Cell* Grid::GetCell(ColRow_t colrow) const noexcept {
+    return GetCellImpl(*this, colrow);
+}
+
+const Grid::Cell* Grid::GetCell(std::size_t index) const noexcept {
+    return GetCellImpl(*this, index);
+}
 
 
 

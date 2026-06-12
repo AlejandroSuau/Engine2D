@@ -37,7 +37,9 @@ private:
     void Update(float dt);
     void Render();
     void HandleEvents();
-    void Shutdown();    
+    void Shutdown();
+
+    void HandleLeftMouseButtonClick(const Vec2<float>& coords);
     
     void CheckGameOver();
 };

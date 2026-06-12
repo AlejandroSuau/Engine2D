@@ -10,23 +10,36 @@
 class Grid {
 public:
     struct Cell {
-        std::size_t grid_index_{};
-        int row{};
-        int col{};
+        const std::size_t grid_index_{};
+        const ColRow_t col_row_{};
+        const Coords_t top_left_coords_{};
         std::optional<Block> block{std::nullopt};
     };
     using Cells_t = std::vector<Cell>;
 
     Grid(int row_count, int col_count);
 
+    [[nodiscard]] bool IsAnyBlockMoving() const noexcept;
+
     [[nodiscard]] int RowCount() const;
     [[nodiscard]] int ColCount() const;
     [[nodiscard]] int CellCount() const;
 
-    [[nodiscard]] std::size_t FromColRowToIndex(const ColRow_t& col_row) const;
+    [[nodiscard]] std::size_t ColRowToIndex(const ColRow_t& col_row) const;
+    [[nodiscard]] std::size_t CoordsToIndex(const Coords_t& coords) const;
+    [[nodiscard]] ColRow_t CoordsToColRow(const Coords_t& coords) const;
     [[nodiscard]] ColRow_t IndexToColRow(std::size_t index) const;
 
+    Cell* GetCell(Coords_t coords) noexcept;
+    Cell* GetCell(ColRow_t colrow) noexcept;
+    Cell* GetCell(std::size_t index) noexcept;
+    const Cell* GetCell(Coords_t coords) const noexcept;
+    const Cell* GetCell(ColRow_t col_row) const noexcept;
+    const Cell* GetCell(std::size_t index) const noexcept;
+
     [[nodiscard]] const Cells_t& Cells() const;
+
+    void Update(float dt);
 
 private:
     const int row_count_;
@@ -35,7 +48,36 @@ private:
 
     Cells_t cells_;
 
+    bool is_any_block_moving_;
+
     void Init();
+
+    template <class GridT>
+    using cell_ptr_t = std::conditional_t<
+        std::is_const_v<std::remove_reference_t<GridT>>,
+        const Cell*,
+        Cell*>;
+
+    template<typename GridT>
+    static cell_ptr_t<GridT> GetCellImpl(GridT& grid, ColRow_t col_row) {
+        const auto index = grid.ColRowToIndex(col_row);
+        return &grid.cells_[index];
+    }
+
+    template<typename GridT>
+    static cell_ptr_t<GridT> GetCellImpl(GridT& grid, Coords_t coords) {
+        const auto index = grid.CoordsToIndex(coords);
+        return &grid.cells_[index];
+    }
+
+    template<typename GridT>
+    static cell_ptr_t<GridT> GetCellImpl(GridT& grid, std::size_t index) {
+        if (index >= grid.cell_count_) {
+            return nullptr;
+        }
+
+        return &grid.cells_[index];
+    }
 };
 
 
